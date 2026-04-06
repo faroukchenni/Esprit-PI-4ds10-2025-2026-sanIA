@@ -1,0 +1,36 @@
+{
+  "model_version": "SanIA-v3.2-Tunisia",
+  "feature_cols": [
+    "crop_age_days",
+    "temperature_C",
+    "humidity_%",
+    "soil_moisture_%",
+    "field_capacity_%",
+    "wilting_point_%",
+    "moisture_T-1",
+    "moisture_T-2",
+    "moisture_T-3",
+    "temp_T-1",
+    "temp_T-2",
+    "temp_T-3"
+  ],
+  "static_cols": [
+    "crop_age_days",
+    "temperature_C",
+    "humidity_%",
+    "soil_moisture_%",
+    "field_capacity_%",
+    "wilting_point_%"
+  ],
+  "optimal_threshold": 0.709693,
+  "calibrated_threshold": 0.709693,
+  "soil_type_classes": [
+    "Loam",
+    "Sandy Loam",
+    "Silt Loam"
+  ],
+  "calibration_method": "Platt scaling (LogisticRegression on raw XGBoost proba)",
+  "training_dataset": "NASA POWER 2023-2024 Tunisia FAO-56 simulation",
+  "n_training_rows": 84172,
+  "n_irrigation_events": 2485
+}
