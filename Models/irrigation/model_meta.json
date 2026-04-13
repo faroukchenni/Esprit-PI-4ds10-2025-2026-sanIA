@@ -1,36 +1,141 @@
 {
-  "model_version": "SanIA-v3.2-Tunisia",
+  "model_version": "SanIA-v4.0-Production",
   "feature_cols": [
-    "crop_age_days",
+    "SMD",
+    "Kc",
+    "ETc",
+    "et0_mm",
     "temperature_C",
-    "humidity_%",
-    "soil_moisture_%",
-    "field_capacity_%",
-    "wilting_point_%",
-    "moisture_T-1",
-    "moisture_T-2",
-    "moisture_T-3",
-    "temp_T-1",
-    "temp_T-2",
-    "temp_T-3"
-  ],
-  "static_cols": [
+    "humidity_pct",
+    "rain_mm",
     "crop_age_days",
+    "SMD_lag_1",
+    "SMD_lag_2",
+    "SMD_lag_3",
+    "SMD_lag_4",
+    "SMD_lag_5",
+    "SMD_lag_6",
+    "SMD_lag_7",
+    "temp_lag_1",
+    "temp_lag_2",
+    "temp_lag_3",
+    "temp_lag_4",
+    "temp_lag_5",
+    "temp_lag_6",
+    "temp_lag_7",
+    "crop_apple",
+    "crop_grape",
+    "crop_potato",
+    "crop_tomato"
+  ],
+  "continuous_feats": [
+    "SMD",
+    "Kc",
+    "ETc",
+    "et0_mm",
     "temperature_C",
-    "humidity_%",
-    "soil_moisture_%",
-    "field_capacity_%",
-    "wilting_point_%"
+    "humidity_pct",
+    "rain_mm",
+    "crop_age_days",
+    "SMD_lag_1",
+    "SMD_lag_2",
+    "SMD_lag_3",
+    "SMD_lag_4",
+    "SMD_lag_5",
+    "SMD_lag_6",
+    "SMD_lag_7",
+    "temp_lag_1",
+    "temp_lag_2",
+    "temp_lag_3",
+    "temp_lag_4",
+    "temp_lag_5",
+    "temp_lag_6",
+    "temp_lag_7"
   ],
-  "optimal_threshold": 0.709693,
-  "calibrated_threshold": 0.709693,
-  "soil_type_classes": [
-    "Loam",
-    "Sandy Loam",
-    "Silt Loam"
+  "ohe_feats": [
+    "crop_apple",
+    "crop_grape",
+    "crop_potato",
+    "crop_tomato"
   ],
-  "calibration_method": "Platt scaling (LogisticRegression on raw XGBoost proba)",
-  "training_dataset": "NASA POWER 2023-2024 Tunisia FAO-56 simulation",
-  "n_training_rows": 84172,
-  "n_irrigation_events": 2485
+  "target": "irrigate",
+  "warn_threshold": 0.9251903807615232,
+  "act_threshold": 0.5225851703406814,
+  "threshold_method": "WARN: highest thr with recall>=0.85 (high->low scan) | ACT: F1-optimal with recall>=0.70 (low->high scan)",
+  "calibration_method": "Platt scaling (LogisticRegression fitted on 2024 Val raw probas)",
+  "training_years": [
+    2020,
+    2021,
+    2022,
+    2023
+  ],
+  "validation_year": 2024,
+  "test_year": [
+    2025,
+    2026
+  ],
+  "n_train_rows": 140256,
+  "n_irrigate_train": 65143,
+  "scale_pos_weight": 1.0738,
+  "best_params": {
+    "subsample": 0.9,
+    "reg_lambda": 2.0,
+    "reg_alpha": 0,
+    "n_estimators": 400,
+    "min_child_weight": 10,
+    "max_depth": 5,
+    "learning_rate": 0.05,
+    "gamma": 0.1,
+    "colsample_bytree": 0.8
+  },
+  "kc_stages": {
+    "tomato": {
+      "ini": 0.6,
+      "mid": 1.15,
+      "end": 0.8,
+      "d_ini": 30,
+      "d_dev": 40,
+      "d_mid": 40,
+      "d_late": 25
+    },
+    "potato": {
+      "ini": 0.5,
+      "mid": 1.15,
+      "end": 0.75,
+      "d_ini": 25,
+      "d_dev": 30,
+      "d_mid": 45,
+      "d_late": 30
+    },
+    "apple": {
+      "ini": 0.6,
+      "mid": 1.2,
+      "end": 0.75,
+      "d_ini": 20,
+      "d_dev": 70,
+      "d_mid": 90,
+      "d_late": 30
+    },
+    "grape": {
+      "ini": 0.3,
+      "mid": 0.85,
+      "end": 0.45,
+      "d_ini": 20,
+      "d_dev": 40,
+      "d_mid": 120,
+      "d_late": 60
+    }
+  },
+  "depletion_p": {
+    "tomato": 0.4,
+    "potato": 0.35,
+    "apple": 0.5,
+    "grape": 0.45
+  },
+  "retraining_trigger": "PSI > 0.20 on SMD or ETc \u2014 schedule quarterly refit",
+  "known_failure_modes": [
+    "New crop type not in OHE schema \u2192 add to KC_STAGES and retrain",
+    "Sensor offline >7 days \u2192 lags become stale, SMD_lag predictions unreliable",
+    "Rain gauge malfunction \u2192 rain guard may fail, act_thr decisions override incorrectly"
+  ]
 }
