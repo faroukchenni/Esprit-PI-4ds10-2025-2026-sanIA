@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28de47310bb87bb45a3008e64f7f3371, type: 3}
+  m_Name: DigitalTwinConfig
+  m_EditorClassIdentifier: Assembly-CSharp::DigitalTwinConfig
+  backendUrl: http://localhost:8001
+  loginEmail: digitaltwin@sania.ai
+  loginPassword: sania2025
+  decisionEveryNDays: 1
+  zones:
+  - zoneName: Potato
+    fieldId: twin_potato
+    soilType: Sandy Loam
+    fieldCapacity_pct: 38
+    wiltingPoint_pct: 14
+    rootZoneDepth_m: 0.4
+    area_m2: 10000
+    appEfficiency_pct: 85
+  - zoneName: Tomato
+    fieldId: twin_tomato
+    soilType: Sandy Loam
+    fieldCapacity_pct: 38
+    wiltingPoint_pct: 14
+    rootZoneDepth_m: 0.35
+    area_m2: 10000
+    appEfficiency_pct: 85
+  - zoneName: Grape
+    fieldId: twin_grape
+    soilType: Loam
+    fieldCapacity_pct: 35
+    wiltingPoint_pct: 12
+    rootZoneDepth_m: 0.6
+    area_m2: 10000
+    appEfficiency_pct: 85
+  - zoneName: Apple
+    fieldId: twin_apple
+    soilType: Silt Loam
+    fieldCapacity_pct: 32
+    wiltingPoint_pct: 10
+    rootZoneDepth_m: 0.8
+    area_m2: 10000
+    appEfficiency_pct: 85

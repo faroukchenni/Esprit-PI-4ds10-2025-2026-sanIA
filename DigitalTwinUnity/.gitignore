@@ -1,0 +1,12 @@
+.venv/
+.vs/
+__pycache__/
+.env
+*.pyc
+
+# Unity ignored directories
+DigitalTwinUnity/Library/
+DigitalTwinUnity/Temp/
+DigitalTwinUnity/Obj/
+DigitalTwinUnity/Logs/
+DigitalTwinUnity/UserSettings/
