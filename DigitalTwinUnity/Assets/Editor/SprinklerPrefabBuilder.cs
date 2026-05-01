@@ -89,6 +89,21 @@ public class SprinklerPrefabBuilder
         PrefabUtility.SaveAsPrefabAsset(go, path);
         Object.DestroyImmediate(go);
 
+        // Auto-assign the saved prefab to SprinklerSystem in the open scene so
+        // sprinklerPrefab is never null at runtime (null → procedural path → pink URP material).
+        SprinklerSystem ss = Object.FindFirstObjectByType<SprinklerSystem>();
+        if (ss != null)
+        {
+            GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            ss.sprinklerPrefab = prefabAsset;
+            EditorUtility.SetDirty(ss.gameObject);
+            Debug.Log("[SprinklerPrefabBuilder] Auto-assigned prefab to SprinklerSystem in scene — save the scene to persist.");
+        }
+        else
+        {
+            Debug.LogWarning("[SprinklerPrefabBuilder] No SprinklerSystem found in scene — drag Assets/Prefabs/Sprinkler.prefab onto SprinklerSystem.sprinklerPrefab manually.");
+        }
+
         Debug.Log($"[SprinklerPrefabBuilder] Rebuilt {path} — shader: {(shader != null ? shader.name : "Standard fallback")}");
     }
 }

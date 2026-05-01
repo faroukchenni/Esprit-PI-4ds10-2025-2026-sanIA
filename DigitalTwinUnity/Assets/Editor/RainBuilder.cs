@@ -37,8 +37,10 @@ public static class RainBuilder
 
         // Position above farm center (20×20 grid × 2.2 spacing ÷ 2 ≈ 22m centre)
         rainGO.transform.position = new Vector3(22f, 45f, 22f);
-        // Rotate so the emitter's +Y faces down → particles fall toward ground
-        rainGO.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+        // Euler(180,0,0) maps local +Y → world -Y so particles emit straight down.
+        // Euler(90,0,0) was wrong: it mapped the 1-unit Y scale to world Z, creating
+        // a 1m-wide strip at Z≈22 instead of a flat plane over all 4 fields.
+        rainGO.transform.rotation = Quaternion.Euler(180f, 0f, 0f);
 
         // ── 3. Configure ParticleSystem ───────────────────────────────────────
         ParticleSystem ps = rainGO.GetComponent<ParticleSystem>();
