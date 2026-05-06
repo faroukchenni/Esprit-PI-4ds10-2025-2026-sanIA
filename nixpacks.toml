@@ -1,5 +1,12 @@
+[providers]
+python = "python3"
+
+[phases.setup]
+# "..." keeps any Nixpacks-detected packages; python3 ensures pip exists.
+nixPkgs = ["...", "python3"]
+
 [phases.install]
-cmds = ["pip install -r backend/requirements.txt"]
+cmds = ["python -m pip install -r backend/requirements.txt"]
 
 [start]
 cmd = "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
