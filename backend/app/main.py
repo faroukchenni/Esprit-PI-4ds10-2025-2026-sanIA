@@ -3,6 +3,7 @@ SanIA AgriSmart — FastAPI Application
 ======================================
 All routers mounted under /api/v1.
 """
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -36,8 +37,12 @@ def _init_irrigation_agent(app: FastAPI):
 # ── Lifespan ──────────────────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    _init_db()
-    _init_irrigation_agent(app)
+ # Keep startup fast/reliable on PaaS. Heavy init can be enabled explicitly.
+ if os.getenv("ENABLE_STARTUP_INIT", "0") == "1":
+  _init_db()
+  _init_irrigation_agent(app)
+ else:
+  app.state.irrigation_agent = None
     yield
 
 
