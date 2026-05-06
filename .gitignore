@@ -1,0 +1,80 @@
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+
+# VisualStudio
+.vs/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.slnx
+*.png
+
+# Unity3D generated meta files are required for versioning
+# *.meta
+
+# Unity3D generated file on crash reports
+sysinfo.txt
+
+# Builds
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# Crashlytics generated file
+crashlytics-build.properties
+
+# Packed Addressables
+/[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/**/*.bin*
+
+# Uncomment this line if you wish to ignore the asset store tools plugin
+# /[Aa]ssets/[Aa]sset[Ss]tore[Tt]ools*
+
+# Claude AI tooling — never expose
+.claude/
+.claudeignore
+CLAUDE.md
+
+# Secrets
+.env
+*.env
+
+# Python virtual environments
+.venv*/
+venv/
+env/
+
+# Dev/patch artifacts
+apply_fixes.py
+patch_steps1to4.py
+build_final_notebook.py
+patch_final_fixes.py
+fadi_files.json
+implementation_plan.md
+pip_list.txt
+
+# Raw data & caches
+Data/Raw/
+Data/Processed/
+irrigation/raw_datasets/
+__pycache__/
+*.pyc
+
+# JS dependencies (never merge local installs into teammate branches)
+**/node_modules/

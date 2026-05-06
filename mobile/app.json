@@ -1,0 +1,58 @@
+{
+  "expo": {
+    "name": "SANIA AgriSmart",
+    "slug": "sania-agrismart",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/logo.jpg",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "assets/**",
+      "assets/models/*"
+    ],
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1B4332"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "tn.sania.agrismart",
+      "infoPlist": {
+        "NSCameraUsageDescription": "SANIA needs camera access to scan plant leaves for disease detection.",
+        "NSPhotoLibraryUsageDescription": "SANIA needs photo library access to select plant images for analysis."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.jpg",
+        "backgroundColor": "#1B4332"
+      },
+      "package": "tn.sania.agrismart",
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "SANIA needs camera access to scan plant leaves for disease detection."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "SANIA needs photo library access to select plant images for analysis."
+        }
+      ],
+      "expo-asset",
+      "react-native-fast-tflite"
+    ]
+  }
+}

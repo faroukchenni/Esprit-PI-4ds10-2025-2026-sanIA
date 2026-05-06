@@ -1,0 +1,15 @@
+Group,Metric,Value
+Training checkpoint,Best epoch (by val IoU),47
+Training checkpoint,Val IoU at best epoch,0.7341
+Training checkpoint,Train IoU at best epoch,0.8553
+Dataset,Test images,89
+Segmentation (per-image),IoU — mean,0.6943
+Segmentation (per-image),IoU — std,0.1861
+Segmentation (per-image),IoU — min / max,0.0290 / 0.9416
+Segmentation (per-image),Dice — mean,0.8023
+Segmentation (per-image),Dice — std,0.1611
+Severity % (GT vs mean sigmoid),Pearson r,0.8583
+Severity % (GT vs mean sigmoid),RMSE (pp),9.31
+Severity % (GT vs mean sigmoid),MAE (pp),4.28
+Keras evaluate (test),loss,0.566803
+Keras evaluate (test),compile_metrics,0.938414

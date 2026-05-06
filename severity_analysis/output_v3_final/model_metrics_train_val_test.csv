@@ -1,0 +1,12 @@
+Metric,Train @ epoch 47,Validation @ epoch 47,Test
+Model,MobileNetV3_Attention_UNet,,
+Best epoch (by val IoU),47,,
+,,,
+Loss (combined),0.242014,0.445109,0.566803
+Pixel accuracy,0.976620,0.955646,0.938414
+IoU (Keras / batch),0.855286,0.734057,0.719106
+,,,
+"IoU mean ± std (per-image, test)",,,0.6943 ± 0.1861
+"Dice mean ± std (per-image, test)",,,0.8023 ± 0.1611
+Severity % — Pearson r (test),,,0.8583
+"Severity % — RMSE (test, pp)",,,9.31

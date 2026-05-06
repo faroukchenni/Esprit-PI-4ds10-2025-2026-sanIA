@@ -1,0 +1,2 @@
+# Keep our DigitalTwinUnity tree on merge conflicts with teammate branches
+DigitalTwinUnity/** merge=ours
