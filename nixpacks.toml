@@ -1,6 +1,3 @@
-[providers]
-python = "python3"
-
 [phases.setup]
 # "..." keeps any Nixpacks-detected packages; python3 ensures pip exists.
 nixPkgs = ["...", "python3"]
