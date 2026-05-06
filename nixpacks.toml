@@ -1,6 +1,3 @@
-[phases.setup]
-nixPkgs = ["gdal", "libgdal", "proj", "geos"]
-
 [phases.install]
 cmds = ["pip install -r backend/requirements.txt"]
 
