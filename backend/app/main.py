@@ -11,7 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.db.session import Base, engine
-from app.routers import auth, irrigation
+from app.routers import auth
 
 
 # ── DB init (create tables if they don't exist) ───────────────────────────────
@@ -37,9 +37,14 @@ def _init_irrigation_agent(app: FastAPI):
 # ── Lifespan ──────────────────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Keep startup fast/reliable on PaaS. Heavy init can be enabled explicitly.
-    if os.getenv("ENABLE_STARTUP_INIT", "0") == "1":
+    # Lightweight startup for PaaS. Opt into heavy modules only when needed.
+    if os.getenv("ENABLE_STARTUP_DB", "1") == "1":
         _init_db()
+
+    if (
+        os.getenv("ENABLE_STARTUP_INIT", "0") == "1"
+        and os.getenv("ENABLE_IRRIGATION", "0") == "1"
+    ):
         _init_irrigation_agent(app)
     else:
         app.state.irrigation_agent = None
@@ -62,8 +67,11 @@ app.add_middleware(
 )
 
 # ── Routers ───────────────────────────────────────────────────────────────────
-app.include_router(auth.router,       prefix=settings.API_V1_STR, tags=["Auth"])
-app.include_router(irrigation.router, prefix=settings.API_V1_STR, tags=["Irrigation"])
+app.include_router(auth.router, prefix=settings.API_V1_STR, tags=["Auth"])
+if os.getenv("ENABLE_IRRIGATION", "0") == "1":
+    from app.routers import irrigation
+
+    app.include_router(irrigation.router, prefix=settings.API_V1_STR, tags=["Irrigation"])
 
 
 @app.get("/")

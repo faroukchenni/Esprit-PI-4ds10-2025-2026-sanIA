@@ -1,13 +1,10 @@
-[phases.setup]
-# "..." keeps any Nixpacks-detected packages.
-# Nix's python3 may not include pip, so install it explicitly.
+﻿[phases.setup]
 nixPkgs = ["...", "python3", "python3Packages.pip"]
 
 [phases.install]
 cmds = [
   "pip3 --version",
-  "pip3 install --break-system-packages --index-url https://download.pytorch.org/whl/cpu torch torchvision torchaudio",
-  "pip3 install --break-system-packages -r backend/requirements.txt"
+  "pip3 install --break-system-packages -r backend/requirements-web.txt"
 ]
 
 [start]
