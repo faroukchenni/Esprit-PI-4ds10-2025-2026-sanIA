@@ -44,13 +44,13 @@ public class DigitalTwinConfig : ScriptableObject
 
     [Header("Backend Connection")]
     [Tooltip("URL of the running FastAPI backend — no trailing slash")]
-    public string backendUrl = "http://localhost:8001";
+    public string backendUrl = "http://localhost:8000";
 
     [Tooltip("Login email for the SanIA backend — must be a registered user")]
-    public string loginEmail = "digitaltwin@sania.ai";
+    public string loginEmail = "fellah@sania.ai";
 
     [Tooltip("Login password for the SanIA backend")]
-    public string loginPassword = "sania2025";
+    public string loginPassword = "sania123";
 
     [Header("Irrigation Timing")]
     [Tooltip("How many simulated days between each agent decision call (1 = every day)")]

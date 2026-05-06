@@ -45,7 +45,7 @@ public class DroneRecon : MonoBehaviour
 
     [Header("Patrol Mode")]
     [Tooltip("Enable to start autonomous patrol loop. Disable to keep manual DroneController navigation.")]
-    public bool autoPatrol = false;
+    public bool autoPatrol = true;
 
     // ── State ──────────────────────────────────────────────────────────────────
 
@@ -53,10 +53,20 @@ public class DroneRecon : MonoBehaviour
     private bool    _isScanning = false;
     private Vector3 _targetPos;
 
+    private DiseaseManager _disease;
+    private CyberGrid      _grid;
+
+    private static readonly Color LASER_CLEAR   = new Color(0f,  0.9f, 1f,  1f);
+    private static readonly Color LASER_DISEASE = new Color(1f,  0.2f, 0f,  1f);
+    private static readonly Color SCAN_FLASH    = new Color(0f,  0.9f, 1f,  0.25f); // zone tint during scan
+
     // ── Lifecycle ──────────────────────────────────────────────────────────────
 
     private void Start()
     {
+        _disease = DiseaseManager.Instance;
+        _grid    = Object.FindFirstObjectByType<CyberGrid>();
+
         if (scanLaser != null)
         {
             scanLaser.startColor = scanColor;
@@ -64,7 +74,7 @@ public class DroneRecon : MonoBehaviour
             scanLaser.enabled    = false;
         }
 
-        _targetPos = transform.position;   // stay put — don't warp to grid centre
+        _targetPos = transform.position;
 
         if (autoPatrol)
         {
@@ -97,12 +107,54 @@ public class DroneRecon : MonoBehaviour
             if (scanLaser != null) scanLaser.enabled = !overview;
 
             if (!overview)
-                TwinEventLogger.Log("DRONE", $"Scanning {ZoneNames[_wpIndex]} zone.", "info");
+            {
+                string zone = ZoneNames[_wpIndex];
+                TwinEventLogger.Log("DRONE", $"Scanning {zone} zone...", "info");
 
-            yield return new WaitForSeconds(overview ? overviewDwellSeconds : scanDwellSeconds);
+                // Flash zone soil to scan-cyan for first half of dwell
+                if (_grid != null) _grid.SetZoneColor(zone, SCAN_FLASH);
+
+                yield return new WaitForSeconds(scanDwellSeconds * 0.5f);
+
+                // Check for disease after mid-scan
+                float infPct = _disease?.GetZoneInfectionPct(zone) ?? 0f;
+                if (infPct > 0.05f)
+                {
+                    if (scanLaser != null)
+                    {
+                        scanLaser.startColor = LASER_DISEASE;
+                        scanLaser.endColor   = new Color(LASER_DISEASE.r, LASER_DISEASE.g, LASER_DISEASE.b, 0f);
+                    }
+                    TwinEventLogger.Log("DRONE",
+                        $"ALERT: {zone} — {infPct * 100f:F0}% infected. Flagging for treatment.", "warn");
+                }
+                else
+                {
+                    if (scanLaser != null)
+                    {
+                        scanLaser.startColor = LASER_CLEAR;
+                        scanLaser.endColor   = new Color(LASER_CLEAR.r, LASER_CLEAR.g, LASER_CLEAR.b, 0f);
+                    }
+                    TwinEventLogger.Log("DRONE", $"{zone}: CLEAR.", "info");
+                }
+
+                // Restore zone color (CyberGrid UpdateVisuals will take over next frame)
+                if (_grid != null) _grid.RestoreAllOriginals();
+
+                yield return new WaitForSeconds(scanDwellSeconds * 0.5f);
+            }
+            else
+            {
+                yield return new WaitForSeconds(overviewDwellSeconds);
+            }
 
             _isScanning = false;
-            if (scanLaser != null) scanLaser.enabled = false;
+            if (scanLaser != null)
+            {
+                scanLaser.enabled    = false;
+                scanLaser.startColor = LASER_CLEAR;
+                scanLaser.endColor   = new Color(LASER_CLEAR.r, LASER_CLEAR.g, LASER_CLEAR.b, 0f);
+            }
 
             _wpIndex = (_wpIndex + 1) % ZoneCentres.Length;
         }

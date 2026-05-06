@@ -50,6 +50,10 @@ public class IrrigationRequest
     public float  application_efficiency_pct;
     /// <summary>Set to digital_twin for Unity; IoT builds use iot_maquette (matches backend).</summary>
     public string decision_source = "digital_twin";
+    /// <summary>mm precip for ML rain_mm + rain guard; &lt; 0 = let backend use Open-Meteo.</summary>
+    public float twin_rain_mm_24h = -1f;
+    /// <summary>ET0 mm/day from twin weather; &lt; 0 = let backend use Open-Meteo.</summary>
+    public float twin_et0_mm = -1f;
 }
 
 /// <summary>
@@ -109,7 +113,18 @@ public class SanIAApiClient : MonoBehaviour
     public bool IsReady => !string.IsNullOrEmpty(_jwt);
 
     private string _jwt = "";
-    private string _backendUrl = "http://localhost:8001";
+
+    /// <summary>
+    /// Called by the website via SendMessage when the user is already logged in.
+    /// Skips the credential login entirely and uses the website's JWT directly.
+    /// </summary>
+    public void SetJwtFromWeb(string jwt)
+    {
+        if (string.IsNullOrEmpty(jwt)) return;
+        _jwt = jwt;
+        Debug.Log("[SanIAApiClient] JWT received from website — skipping login.");
+    }
+    private string _backendUrl = "http://localhost:8000";
 
     // ── API prefix matching main.py include_router prefixes ───────────────────
     private const string LOGIN_PATH    = "/api/v1/auth/login";
@@ -177,15 +192,20 @@ public class SanIAApiClient : MonoBehaviour
 
     private IEnumerator LoginCoroutine(string email, string password, Action<bool> onDone)
     {
-        // OAuth2PasswordRequestForm requires application/x-www-form-urlencoded
-        WWWForm form = new WWWForm();
-        form.AddField("username", email);   // FastAPI OAuth2 uses "username" not "email"
-        form.AddField("password", password);
+        // OAuth2PasswordRequestForm: application/x-www-form-urlencoded (not multipart WWWForm).
+        string body =
+            "grant_type=password" +
+            "&username=" + Uri.EscapeDataString(email) +
+            "&password=" + Uri.EscapeDataString(password);
 
         string url = _backendUrl + LOGIN_PATH;
         Debug.Log($"[SanIAApiClient] Attempting login → POST {url}");
 
-        using UnityWebRequest req = UnityWebRequest.Post(url, form);
+        byte[] bodyRaw = Encoding.UTF8.GetBytes(body);
+        using var req = new UnityWebRequest(url, UnityWebRequest.kHttpVerbPOST);
+        req.uploadHandler = new UploadHandlerRaw(bodyRaw);
+        req.downloadHandler = new DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/x-www-form-urlencoded");
         req.timeout = 10;
 
         yield return req.SendWebRequest();
@@ -314,6 +334,9 @@ public class SanIAApiClient : MonoBehaviour
 
         string url = _backendUrl + DECISION_PATH;
 
+        // Always log request so we can verify fields sent to the backend
+        Debug.Log($"[SanIAApiClient] POST {url}\nREQUEST: {json}");
+
         using UnityWebRequest req = new UnityWebRequest(url, "POST");
         req.uploadHandler   = new UploadHandlerRaw(body);
         req.downloadHandler = new DownloadHandlerBuffer();
@@ -327,21 +350,23 @@ public class SanIAApiClient : MonoBehaviour
         {
             string err = $"HTTP {req.responseCode}: {req.error}";
 
-            // 401 = token expired — clear JWT so IsReady becomes false
             if (req.responseCode == 401)
             {
                 _jwt = "";
                 err = "Token expired — re-login required.";
             }
 
-            Debug.LogWarning($"[SanIAApiClient] Decision request failed: {err}");
+            Debug.LogWarning($"[SanIAApiClient] Decision failed: {err}");
             onResult?.Invoke(null, err);
             yield break;
         }
 
+        string responseText = req.downloadHandler.text;
+        // Always log raw response so we can see exactly what the model returns
+        Debug.Log($"[SanIAApiClient] RESPONSE ({payload.field_id}): {responseText}");
+
         try
         {
-            string responseText = req.downloadHandler.text;
             IrrigationDecisionResult result =
                 JsonUtility.FromJson<IrrigationDecisionResult>(responseText);
 
@@ -358,5 +383,63 @@ public class SanIAApiClient : MonoBehaviour
         {
             onResult?.Invoke(null, $"Parse error: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Generic authenticated GET — returns raw JSON string via callback.
+    /// callback(json, errorMessage): errorMessage is null on success.
+    /// </summary>
+    public void GetJson(string path, Action<string, string> callback)
+    {
+        if (!IsReady) { callback?.Invoke(null, "Not authenticated"); return; }
+        StartCoroutine(GetJsonCoroutine(path, callback));
+    }
+
+    private IEnumerator GetJsonCoroutine(string path, Action<string, string> callback)
+    {
+        using UnityWebRequest req = UnityWebRequest.Get(_backendUrl + path);
+        req.SetRequestHeader("Authorization", "Bearer " + _jwt);
+        req.timeout = 10;
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success)
+        {
+            if (req.responseCode == 401) _jwt = "";
+            callback?.Invoke(null, $"HTTP {req.responseCode}: {req.error}");
+            yield break;
+        }
+        callback?.Invoke(req.downloadHandler.text, null);
+    }
+
+    /// <summary>
+    /// Generic authenticated POST with JSON body — returns raw JSON via callback.
+    /// callback(json, errorMessage): errorMessage is null on success.
+    /// Timeout is 30s — suitable for RAG/LLM endpoints that can be slow.
+    /// </summary>
+    public void PostJson(string path, string jsonBody, Action<string, string> callback)
+    {
+        if (!IsReady) { callback?.Invoke(null, "Not authenticated"); return; }
+        StartCoroutine(PostJsonCoroutine(path, jsonBody, callback));
+    }
+
+    private IEnumerator PostJsonCoroutine(string path, string jsonBody, Action<string, string> callback)
+    {
+        byte[] body = Encoding.UTF8.GetBytes(jsonBody);
+        using UnityWebRequest req = new UnityWebRequest(_backendUrl + path, "POST");
+        req.uploadHandler   = new UploadHandlerRaw(body);
+        req.downloadHandler = new DownloadHandlerBuffer();
+        req.SetRequestHeader("Content-Type", "application/json");
+        req.SetRequestHeader("Authorization", "Bearer " + _jwt);
+        req.timeout = 30;
+
+        yield return req.SendWebRequest();
+
+        if (req.result != UnityWebRequest.Result.Success)
+        {
+            if (req.responseCode == 401) _jwt = "";
+            callback?.Invoke(null, $"HTTP {req.responseCode}: {req.error}");
+            yield break;
+        }
+        callback?.Invoke(req.downloadHandler.text, null);
     }
 }

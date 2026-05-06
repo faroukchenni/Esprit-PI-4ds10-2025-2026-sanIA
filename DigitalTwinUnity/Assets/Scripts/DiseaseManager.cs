@@ -51,14 +51,14 @@ public class DiseaseManager : MonoBehaviour
             _sim = TwinSimulationManager.Instance;
         }
 
-        _grid    = Object.FindFirstObjectByType<CyberGrid>();
-        _weather = Object.FindFirstObjectByType<WeatherSystem>();
+        _grid    = UnityEngine.Object.FindFirstObjectByType<CyberGrid>();
+        _weather = UnityEngine.Object.FindFirstObjectByType<WeatherSystem>();
 
         // Wait for CyberGrid to finish spawning (it also uses IEnumerator Start)
         while (_grid == null || _grid.spawnedCells == null || _grid.spawnedCells.Count == 0)
         {
             yield return null;
-            if (_grid == null) _grid = Object.FindFirstObjectByType<CyberGrid>();
+            if (_grid == null) _grid = UnityEngine.Object.FindFirstObjectByType<CyberGrid>();
         }
 
         BuildCellGrid();
@@ -181,12 +181,13 @@ public class DiseaseManager : MonoBehaviour
         // Build spread probability
         float chance = baseSpreadChance;
         if (target.MoistureLevel * 100f > 70f)             chance *= humidityMultiplier;
-        bool isRaining = Object.FindFirstObjectByType<RainController>()?.isRaining ?? false;
+        RainController _rc = UnityEngine.Object.FindFirstObjectByType<RainController>();
+        bool isRaining = _rc != null ? _rc.IsRainingNow : false;
         if (isRaining)                                      chance *= rainMultiplier;
         if (_weather != null && _weather.isDrought)         chance *= droughtMultiplier;
         if (isDownwind)                                     chance *= windMultiplier;
 
-        if (Random.value < chance)
+        if (UnityEngine.Random.value < chance)
         {
             target.IsInfected        = true;
             target.InfectionDay      = day;
@@ -194,7 +195,7 @@ public class DiseaseManager : MonoBehaviour
             target.IsTreated         = false;
             target.DiseaseLevel      = Mathf.Max(target.DiseaseLevel, 0.15f);
 
-            TwinEventLogger.Log("DISEASE", $"Spread to [{tx},{ty}] ({target.Crop})", "warn");
+            // No per-cell log — CheckAlerts fires zone-level summaries each day
             _grid?.StartInfectionFlash(tx, ty);
         }
     }
@@ -208,7 +209,7 @@ public class DiseaseManager : MonoBehaviour
             float pct = GetZoneInfectionPct(zone);
             if (pct > 0.8f)
                 TwinEventLogger.Log("DISEASE",
-                    $"CRITICAL: {zone} — {pct * 100f:F0}% infected! Treat immediately.", "error");
+                    $"CRITICAL: {zone} — {pct * 100f:F0}% infected! Treat immediately.", "warn");
             else if (pct > 0.6f)
                 TwinEventLogger.Log("DISEASE",
                     $"WARNING: {zone} — {pct * 100f:F0}% infected, spreading fast.", "warn");
@@ -218,24 +219,38 @@ public class DiseaseManager : MonoBehaviour
         }
     }
 
+    static bool TryParseZoneName(string zoneName, out CropType crop)
+    {
+        crop = CropType.Empty;
+        if (string.IsNullOrEmpty(zoneName)) return false;
+        switch (zoneName.Trim())
+        {
+            case "Potato": case "potato": case "POTATO": crop = CropType.Potato; return true;
+            case "Tomato": case "tomato": case "TOMATO": crop = CropType.Tomato; return true;
+            case "Grape":  case "grape":  case "GRAPE":  crop = CropType.Grape;  return true;
+            case "Apple":  case "apple":  case "APPLE":  crop = CropType.Apple;  return true;
+            default:
+                if (System.Enum.TryParse(zoneName.Trim(), true, out CropType parsed) &&
+                    parsed != CropType.Empty)
+                {
+                    crop = parsed;
+                    return true;
+                }
+                return false;
+        }
+    }
+
     /// <summary>Returns fraction [0-1] of crop cells in the zone that are actively infected.</summary>
     public float GetZoneInfectionPct(string zoneName)
     {
-        if (_sim?.gridData == null) return 0f;
-        CropType crop;
-        switch (zoneName)
-        {
-            case "Potato": crop = CropType.Potato; break;
-            case "Tomato": crop = CropType.Tomato; break;
-            case "Grape":  crop = CropType.Grape;  break;
-            case "Apple":  crop = CropType.Apple;  break;
-            default: return 0f;
-        }
+        TwinSimulationManager sim = _sim != null ? _sim : TwinSimulationManager.Instance;
+        if (sim?.gridData == null) return 0f;
+        if (!TryParseZoneName(zoneName, out CropType crop)) return 0f;
         int total = 0, infected = 0;
-        for (int x = 0; x < _sim.gridWidth; x++)
-        for (int y = 0; y < _sim.gridHeight; y++)
+        for (int x = 0; x < sim.gridWidth; x++)
+        for (int y = 0; y < sim.gridHeight; y++)
         {
-            GridCellData cell = _sim.gridData[x, y];
+            GridCellData cell = sim.gridData[x, y];
             if (cell.Crop != crop) continue;
             total++;
             if (cell.IsInfected && !cell.IsTreated) infected++;
@@ -270,64 +285,97 @@ public class DiseaseManager : MonoBehaviour
 
         _grid?.StartInfectionFlash(col, row);
 
-        Debug.Log($"[DiseaseManager] DISEASE REPORTED at row:{row} col:{col} severity:{severity * 100f:F0}%");
+        Debug.Log($"[DiseaseManager] Disease at [{col},{row}] {cell.Crop} sev:{severity * 100f:F0}%");
         TwinEventLogger.Log("DISEASE",
-            $"Outbreak at [{col},{row}] {cell.Crop} — severity {severity * 100f:F0}%", "warn");
+            $"Outbreak at [{col},{row}] {cell.Crop} — {severity * 100f:F0}%", "warn");
     }
 
     /// <summary>Infects the centre cell of the named crop zone (e.g. "Tomato").</summary>
     public void InfectZone(string zoneName, float severity)
     {
-        if (_sim == null || _grid == null) return;
+        TwinSimulationManager sim = _sim != null ? _sim : TwinSimulationManager.Instance;
+        CyberGrid             grid = _grid != null ? _grid : UnityEngine.Object.FindFirstObjectByType<CyberGrid>();
+
+        if (sim?.gridData == null || grid?.spawnedCells == null) return;
+        if (!TryParseZoneName(zoneName, out CropType crop) || crop == CropType.Empty) return;
 
         long sumX = 0, sumY = 0;
         int  count = 0;
-        foreach (var cell in _grid.spawnedCells)
+        string cropName = crop.ToString();
+        foreach (var cell in grid.spawnedCells)
         {
-            if (cell.zoneName == zoneName) { sumX += cell.GridX; sumY += cell.GridY; count++; }
+            if (cell.zoneName == cropName) { sumX += cell.GridX; sumY += cell.GridY; count++; }
         }
 
         if (count == 0)
         {
-            Debug.LogWarning($"[DiseaseManager] InfectZone: zone '{zoneName}' not found.");
+            Debug.LogWarning($"[DiseaseManager] InfectZone: zone '{zoneName}' (crop {cropName}) not found.");
             return;
         }
 
         InfectCell((int)(sumY / count), (int)(sumX / count), severity); // row = y, col = x
     }
 
-    /// <summary>Applies treatment to all infected cells in the named zone.</summary>
+    /// <summary>
+    /// Fully clears infection from all cells in the named zone.
+    /// Sets immunity (IsTreated) so re-infection is blocked for treatmentImmunityDays.
+    /// Also restores soil colour immediately so visuals update on this frame.
+    /// </summary>
     public void TreatZone(string zoneName)
     {
-        if (_sim == null || _grid == null) return;
+        TwinSimulationManager sim = _sim != null ? _sim : TwinSimulationManager.Instance;
+        CyberGrid             grid = _grid != null ? _grid : UnityEngine.Object.FindFirstObjectByType<CyberGrid>();
 
-        int treated = 0;
-        foreach (var cell in _grid.spawnedCells)
+        if (sim?.gridData == null)
         {
-            if (cell.zoneName != zoneName) continue;
-            GridCellData data = _sim.gridData[cell.GridX, cell.GridY];
-            if (!data.IsInfected) continue;
-
-            data.IsTreated    = true;
-            data.TreatmentDay = _sim.currentDay;
-
-            // Restore soil that was darkened by late infection (CyberGrid.UpdateVisuals
-            // stops darkening the moment IsTreated = true, but material instance keeps
-            // the old colour until explicitly reset)
-            if (_grid.soilRenderers != null)
-            {
-                Renderer sr = _grid.soilRenderers[cell.GridX, cell.GridY];
-                if (sr != null)
-                {
-                    sr.material.SetColor("_BaseColor", cell.originalColor);
-                    sr.material.color = cell.originalColor;
-                }
-            }
-            treated++;
+            Debug.LogWarning("[DiseaseManager] TreatZone: simulation grid not ready.");
+            return;
         }
 
-        TwinEventLogger.Log("TREATMENT", $"TREATMENT APPLIED — {zoneName}: {treated} cells treated", "info");
-        Debug.Log($"[DiseaseManager] TREATMENT APPLIED - {zoneName} ({treated} cells)");
+        if (!TryParseZoneName(zoneName, out CropType crop) || crop == CropType.Empty)
+        {
+            Debug.LogWarning($"[DiseaseManager] TreatZone: unknown zone '{zoneName}'.");
+            return;
+        }
+
+        int clearedInfection = 0;
+        for (int x = 0; x < sim.gridWidth; x++)
+        {
+            for (int y = 0; y < sim.gridHeight; y++)
+            {
+                GridCellData data = sim.gridData[x, y];
+                if (data.Crop != crop) continue;
+
+                bool wasInfected = data.IsInfected;
+
+                data.IsInfected         = false;
+                data.IsTreated          = true;
+                data.TreatmentDay       = sim.currentDay;
+                data.InfectionSeverity  = 0f;
+                data.DiseaseLevel       = 0f;
+                data.VegetationHealth   = 0.85f;
+                data.MoistureLevel      = Mathf.Max(data.MoistureLevel, 0.5f);
+                data.consecutiveDryDays = 0;
+                data.UpdateStress();
+
+                if (wasInfected) clearedInfection++;
+
+                grid?.ClearInfectionFlash(x, y);
+            }
+        }
+
+        // Let CyberGrid drive per-cell soil/crop colours again (scenario overlays use scenarioActive).
+        if (grid != null)
+        {
+            grid.scenarioActive = false;
+            Color baseCol = CyberGrid.ZoneSoilColor(crop);
+            grid.SetZoneColor(zoneName, baseCol);
+            grid.RebindZoneSoilRenderersToSharedMaterial(crop);
+        }
+
+        TwinEventLogger.Log("TREATMENT",
+            $"Treatment applied to {zoneName} — {clearedInfection} infected cells cleared, zone data restored", "info");
+        Debug.Log($"[DiseaseManager] TreatZone({zoneName}) — crop={crop}, infection cells cleared={clearedInfection}.");
     }
 
     /// <summary>
@@ -351,10 +399,7 @@ public class DiseaseManager : MonoBehaviour
                     SpawnedCellInfo ci = _cellGrid[x, y];
                     Renderer        sr = _grid.soilRenderers[x, y];
                     if (ci != null && sr != null)
-                    {
-                        sr.material.SetColor("_BaseColor", ci.originalColor);
-                        sr.material.color = ci.originalColor;
-                    }
+                        MaterialSafeUtil.ApplyBaseTint(sr.material, ci.originalColor);
                 }
 
                 d.IsInfected        = false;
@@ -383,16 +428,15 @@ public class DiseaseManager : MonoBehaviour
         string diseaseType)
     {
         InfectCell(row, col, severity);
-        Debug.Log($"[DiseaseManager] SENSOR REPORT: {diseaseType} on {cropType} " +
-                  $"at [{row},{col}] severity:{severity:F2}");
+        Debug.Log($"[DiseaseManager] SENSOR REPORT: {diseaseType} on {cropType} at [{row},{col}]");
         TwinEventLogger.Log("SENSOR",
-            $"{diseaseType} detected on {cropType} [{row},{col}] — {severity * 100f:F0}%", "error");
+            $"{diseaseType} detected on {cropType} [{row},{col}] — {severity * 100f:F0}%", "warn");
     }
 
     // ─── Utility ──────────────────────────────────────────────────────────────
     static Vector2Int RandomWindDir()
     {
-        int d = Random.Range(0, 4);
+        int d = UnityEngine.Random.Range(0, 4);
         if (d == 0) return Vector2Int.right;
         if (d == 1) return Vector2Int.left;
         if (d == 2) return Vector2Int.up;

@@ -301,8 +301,7 @@ public class SprinklerSystem : MonoBehaviour
                 if (cell.zoneName != zoneName || cell.soilTile == null) continue;
                 Renderer r = cell.soilTile.GetComponentInChildren<Renderer>();
                 if (r == null) continue;
-                if (r.material.HasProperty("_BaseColor")) r.material.SetColor("_BaseColor", c);
-                r.material.color = c;
+                MaterialSafeUtil.ApplyBaseTint(r.material, c);
             }
 
             yield return null;

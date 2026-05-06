@@ -1,0 +1,412 @@
+{
+  "common": {
+    "unknown": "مش معروف",
+    "na": "—"
+  },
+  "loading": {
+    "title": "SANIA AgriSmart",
+    "subtitle": "فلاحة ذكية · كشف الأمراض بالذكاء الاصطناعي"
+  },
+  "tabs": {
+    "home": "الرئيسية",
+    "detect": "كشف",
+    "history": "السجل",
+    "profile": "الحساب"
+  },
+  "auth": {
+    "taglineLogin": "صحة المحاصيل في جيبك بالذكاء الاصطناعي",
+    "welcomeBack": "مرحبا بك مجددا",
+    "signInSubtitle": "سجّل الدخول للمتابعة",
+    "emailPlaceholder": "البريد الإلكتروني",
+    "passwordPlaceholder": "كلمة السر",
+    "signIn": "دخول",
+    "newHere": "جديد هنا؟",
+    "createAccountLink": "إنشاء حساب",
+    "missingFields": "حقول ناقصة",
+    "missingFieldsMsg": "أدخل البريد وكلمة السر.",
+    "loginFailed": "فشل الدخول",
+    "loginFailedDefault": "تعذّر الدخول. تحقّق من البيانات.",
+    "networkHint": "هاتف حقيقي: حط IP الواي فاي للبي سي في src/config/backendUrl.js وشغّل السيرفر بـ --host 0.0.0.0 ونفس الواي فاي.",
+    "joinSania": "انضم إلى SANIA",
+    "createFarmerAccount": "أنشئ حساب فلاح",
+    "fullName": "الاسم الكامل",
+    "passwordMin": "كلمة السر (6 أحرف على الأقل)",
+    "confirmPassword": "تأكيد كلمة السر",
+    "createAccount": "إنشاء الحساب",
+    "accountCreated": "تم إنشاء الحساب",
+    "accountCreatedMsg": "تم إنشاء حسابك. سجّل الدخول الآن.",
+    "ok": "حسنا",
+    "alreadyHaveAccount": "عندك حساب؟",
+    "signInLink": "دخول",
+    "missingAllFields": "عبّي كل الحقول.",
+    "passwordMismatch": "كلمتا السر مختلفتان",
+    "passwordMismatchMsg": "كلمتا السر غير متطابقتين.",
+    "weakPassword": "كلمة سر ضعيفة",
+    "weakPasswordMsg": "لازم 6 أحرف على الأقل.",
+    "registerError": "تعذّر إنشاء الحساب. حاول ثانية.",
+    "error": "خطأ"
+  },
+  "home": {
+    "eyebrow": "لوحة التحكم",
+    "greeting": "عسلامة {{name}}",
+    "headerSub": "ذكاء دقيق — نصنّف المرض ونحدّد شدة الإصابة",
+    "ctaBadge": "رؤية ذكية",
+    "ctaTitle": "قدّم ورقة",
+    "ctaSub": "نموذجان · نوع المرض + خريطة الشدة",
+    "statScans": "تحليلات",
+    "statAlerts": "تنبيهات",
+    "statHealthy": "سليمة",
+    "sectionTimeline": "الجدول الزمني",
+    "recentScans": "آخر التحليلات",
+    "viewAll": "الكل ←",
+    "emptyTitle": "دفترك فارغ",
+    "emptySub": "صورة واضحة للورقة تعطيك نتيجة فورية بالذكاء الاصطناعي",
+    "tipTitle": "صورة احترافية",
+    "tip1": "ضوء طبيعي، من غير فلاش مباشر على الورقة",
+    "tip2": "ورقة وحيدة واضحة في الإطار",
+    "tip3": "بين الأنسجة السليمة والأعراض",
+    "tip4": "ثبّت الهاتف — الضبابية تضر النموذجين",
+    "farmerDefault": "فلاح",
+    "confidenceLine": "{{crop}} · {{pct}}% ثقة",
+    "statusHealthy": "سليمة",
+    "statusDiseased": "مريضة",
+    "featuresKicker": "الميزات",
+    "featuresTitle": "شنو يقدر يدير SANIA",
+    "featDiagTitle": "كشف فوري",
+    "featDiagSub": "صوّر الورقة في ثواني",
+    "featReminderTitle": "تذكيرات ذكية",
+    "featReminderSub": "ريّ وسماد",
+    "featPlanTitle": "خطوات واضحة",
+    "featPlanSub": "إجراءات عملية لحماية المحصول",
+    "featSolutionsTitle": "حلول فورية",
+    "featSolutionsSub": "نصائح عملية وعلاجات باش النبات يرجع يفيق.",
+    "featProgressTitle": "تتبّع التقدّم",
+    "featProgressSub": "راقب نباتاتك مع الوقت وشوف التحسّن."
+  },
+  "scan": {
+    "kicker": "مختبر ذكاء",
+    "title": "تشخيص الورقة",
+    "sub": "كاميرا أو معرض — نفس النظام",
+    "offlineIntelTitle": "ذكاء على الجهاز",
+    "offlineIntelSub": "ما تحتاجش إنترنت — النماذج محليا",
+    "takePhoto": "التقط صورة",
+    "takePhotoSub": "استعمل الكاميرا لالتقاط الورقة",
+    "gallery": "اختر من المعرض",
+    "gallerySub": "اختر صورة جاهزة",
+    "tipsTitle": "نصائح للتصوير",
+    "tip1": "نور النهار — من غير فلاش",
+    "tip2": "الورقة في وسط الصورة",
+    "tip3": "ورقة وحيدة فيها الأعراض",
+    "tip4": "تجنّب الظل والضبابية",
+    "cropsTitle": "المحاصيل المدعومة",
+    "cropApple": "🍎 تفاح",
+    "cropGrape": "🍇 عنب",
+    "cropPotato": "🥔 بطاطا",
+    "cropTomato": "🍅 طماطم",
+    "permTitle": "إذن مطلوب",
+    "permMsg": "الكاميرا ضرورية لالتقاط الصور.",
+    "captureError": "خطأ",
+    "captureErrorMsg": "تعذّر التقاط الصورة.",
+    "detectionError": "خطأ في التحليل",
+    "analysisFailed": "تعذّر التحليل.",
+    "cameraHint": "ضع الورقة داخل الإطار",
+    "confirmPhoto": "تأكيد الصورة",
+    "offlinePill": "🔴 بدون إنترنت",
+    "previewHintOnline": "هل الصورة تبيّن الورقة بوضوح؟",
+    "previewHintOffline": "بدون إنترنت: التحليل على الهاتف",
+    "analyzingOnline": "جاري التحليل…",
+    "analyzingOffline": "ذكاء اصطناعي على الجهاز…",
+    "analyzeDisease": "تحليل المرض",
+    "retake": "إعادة التقاط"
+  },
+  "result": {
+    "title": "النتيجة",
+    "offlinePill": "🔴 بدون إنترنت",
+    "statusHealthy": "سليمة",
+    "statusDiseased": "مريضة",
+    "confidence": "الثقة",
+    "coverageTitle": "نسبة الإصابة (ذكاء اصطناعي)",
+    "affected": "{{pct}}% مساحة مصابة",
+    "coverageHint": "نسبة سطح الورقة التي تظهر عليها الأعراض",
+    "computingSeverity": "جاري حساب شدة الإصابة…",
+    "aboutTitle": "عن هذا المرض",
+    "maintenanceTips": "✅ نصائح صيانة",
+    "treatmentTips": "💊 معالجة",
+    "topPredictions": "أفضل التوقعات",
+    "scanAnother": "تحليل نبات آخر",
+    "warningCritical": "هذا المرض ينتشر بسرعة. تصرّف فورا واستشر مهندسا فلاحيا.",
+    "severityLabels": {
+      "Critical": "حرج",
+      "Low": "ضعيف",
+      "Moderate": "متوسط",
+      "High": "عالٍ",
+      "Healthy": "سليمة"
+    }
+  },
+  "history": {
+    "title": "سجل التحليلات",
+    "scansCount": "{{count}} تحليل",
+    "cacheBanner": "نتائج مخبأة — اتصل للمزامنة",
+    "filterAll": "الكل",
+    "filterDiseased": "مصابة",
+    "filterHealthy": "سليمة",
+    "empty": "لا تحليلات",
+    "emptySub": "حلّل نباتا لعرض السجل هنا",
+    "statusHealthy": "سليمة",
+    "statusDiseased": "مريضة"
+  },
+  "profile": {
+    "account": "الحساب",
+    "about": "عن التطبيق",
+    "aboutUsTitle": "من نحن",
+    "aboutUsBody": "SANIA AgriSmart يساعد الفلاحين والتعاونيات يكتشفوا أمراض النبات من صور الأوراق بالذكاء الاصطناعي على الهاتف. نجمع بين تصنيف المرض وخريطة الشدة باش تشوف المشكل وقدّاش من الورقة مصاب — حتى من غير إنترنت. هدفنا فلاحة عملية ومستدامة في تونس وبرّا.",
+    "supportedCrops": "المحاصيل",
+    "fullName": "الاسم الكامل",
+    "email": "البريد",
+    "role": "الدور",
+    "roleFarmer": "فلاح",
+    "roleAdmin": "مسؤول تعاونية",
+    "app": "التطبيق",
+    "appValue": "SANIA AgriSmart v1.0",
+    "ai": "الذكاء الاصطناعي",
+    "aiValue": "MobileNetV3 · 16 صنفًا · TFLite",
+    "backend": "الخادم",
+    "backendValue": "FastAPI + PostgreSQL",
+    "cropApple": "تفاح",
+    "cropGrape": "عنب",
+    "cropPotato": "بطاطا",
+    "cropTomato": "طماطم",
+    "signOut": "خروج",
+    "signOutTitle": "تسجيل الخروج",
+    "signOutMsg": "متأكد تريد الخروج؟",
+    "cancel": "إلغاء",
+    "language": "اللغة",
+    "languageHint": "اختر لغة التطبيق",
+    "languageEn": "الإنجليزية",
+    "languageFr": "الفرنسية",
+    "languageTn": "التونسي (دارجة)"
+  },
+  "satellite": {
+    "headerTitle": "تحليل الأقمار الصناعية",
+    "headerSubtitle": "الركيزة 2 — ذكاء الأرض",
+    "loadingFields": "جاري تحميل القطع…",
+    "noFields": "لا قطع مسجّلة",
+    "noFieldsSub": "أنشئ قطعة من لوحة الويب لبدء التحليل.",
+    "fetching": "جلب البيانات…",
+    "loadError": "تعذّر تحميل القطع.",
+    "loadErrorAnalysis": "تعذّر التحليل. تحقّق من الاتصال.",
+    "ndviTitle": "NDVI بالأقمار",
+    "ndviSub": "Sentinel-2 L2A",
+    "noPolygon": "لا حدود للقطعة. ارسم الحد أولا.",
+    "avgNdvi": "متوسط NDVI",
+    "minNdvi": "أدنى NDVI",
+    "maxNdvi": "أقصى NDVI",
+    "clouds": "غيوم",
+    "vraTitle": "خريطة وصفة VRA",
+    "soilTitle": "مؤشرات صحة التربة",
+    "soilSub": "NDVI · SAVI · MSAVI · رطوبة",
+    "ndvi": "NDVI",
+    "savi": "SAVI",
+    "msavi": "MSAVI",
+    "moisture": "رطوبة",
+    "fertilitySuffix": " خصوبة",
+    "stressLevels": {
+      "Low": "منخفض",
+      "Moderate": "متوسط",
+      "High": "مرتفع"
+    },
+    "moistureStressFmt": "إجهاد مائي: {{level}}",
+    "totalPrescription": "الوصفة الكاملة:",
+    "calendarTitle": "التقويم الزراعي",
+    "seasonProgress": "{{pct}}% من الموسم",
+    "timelineTitle": "الجدول الزمني",
+    "nextStage": "القادم: {{name}}",
+    "footer": "بيانات Sentinel-2 · {{date}}"
+  },
+  "diseases": {
+    "Apple___Apple_scab": {
+      "displayName": "جرب التفاح",
+      "crop": "تفاح",
+      "description": "مرض فطري (Venturia inaequalis) يسبب بقعا داكنة على الأوراق والثمار.",
+      "recommendations": [
+        "عالج بمبيد فطري عند بداية البرعم والورقة الصغيرة",
+        "اجمع الأوراق المتساقطة ودمرها",
+        "قلّم لتحسين التهوية",
+        "تجنّب الريّ من الأعلى — رِ عند الجذور",
+        "اختر أصنافا مقاومة للزراعات الجديدة"
+      ]
+    },
+    "Apple___Black_rot": {
+      "displayName": "عفن أسود على التفاح",
+      "crop": "تفاح",
+      "description": "فطر (Botryosphaeria) يسبب بقعا دائرية وثمارا يابسة.",
+      "recommendations": [
+        "أزل الخشب الميت والأورام واحرقها",
+        "رشّ مبيدا من مرحلة الوردة حتى الحصاد",
+        "أزل الثمار المومياء",
+        "حافظ على قوة الشجرة وتسريب جيد",
+        "تأكد من تصريف الماء عند الجذور"
+      ]
+    },
+    "Apple___Cedar_apple_rust": {
+      "displayName": "صدأ التفاح",
+      "crop": "تفاح",
+      "description": "فطر يعطي بقعا برتقالية على وجه الورقة.",
+      "recommendations": [
+        "عالج في الربيع بمبيد مناسب",
+        "بعد عن نباتات العرعر إن أمكن",
+        "اختر أصنافا مقاومة",
+        "راقب في الطقس الرطب"
+      ]
+    },
+    "Apple___healthy": {
+      "displayName": "تفاح سليم",
+      "crop": "تفاح",
+      "description": "الشجرة تبدو سليمة من دون أعراض ظاهرة.",
+      "recommendations": [
+        "واصل العناية الحالية",
+        "عالج وقائيا في الطقس الرطب",
+        "راقب أسبوعيا الجرب والصدأ",
+        "قلّم وسمّد بانتظام"
+      ]
+    },
+    "Background_without_leaves": {
+      "displayName": "لا ورقة واضحة",
+      "crop": "مش معروف",
+      "description": "الصورة لا تُظهر ورقة بوضوح. أعد التقاط الصورة.",
+      "recommendations": [
+        "قرّب ورقة واحدة",
+        "إضاءة جيدة",
+        "الورقة تملأ معظم الإطار",
+        "ثبّت الهاتف"
+      ]
+    },
+    "Grape___Black_rot": {
+      "displayName": "عفن أسود على العنب",
+      "crop": "عنب",
+      "description": "فطر يضر الأوراق والعناقيد.",
+      "recommendations": [
+        "نحاس أو مانكوزيب من الإزهار حتى أسابيع بعده",
+        "أزل العناقيد المصابة",
+        "هوِّ المظلة",
+        "لا تروِ من الأعلى",
+        "رشّ قبل المطر المتوقع"
+      ]
+    },
+    "Grape___Esca_(Black_Measles)": {
+      "displayName": "مرض الخشب (إسكا)",
+      "crop": "عنب",
+      "description": "أمراض معقّدة في الخشب تضر الأوراق والعناقيد.",
+      "recommendations": [
+        "لا علاج كامل — ركّز على الوقاية",
+        "قلّم في جوّ جاف",
+        "أزل الكروم الشديدة الإصابة",
+        "تجنّب جفافا شديدا للماء"
+      ]
+    },
+    "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": {
+      "displayName": "حرق أوراق العنب",
+      "crop": "عنب",
+      "description": "بقع داكنة تؤدي لسقوط مبكر للأوراق.",
+      "recommendations": [
+        "نحاس من أول ظهور",
+        "أزل الأوراق الشديدة",
+        "افتح المظلة",
+        "الريّ عند الجذور"
+      ]
+    },
+    "Grape___healthy": {
+      "displayName": "عنب سليم",
+      "crop": "عنب",
+      "description": "الكرمة تبدو سليمة.",
+      "recommendations": [
+        "واصل الوقاية بالنحاس",
+        "راقب بعد المطر",
+        "مظلة مفتوحة",
+        "سجّل مواعيد الرش"
+      ]
+    },
+    "Potato___Early_blight": {
+      "displayName": "ألترناريا (بطاطا)",
+      "crop": "بطاطا",
+      "description": "فطر يعطي دوائر مستهدفة على الأوراق القديمة.",
+      "recommendations": [
+        "مبيد فطري من أول عرض",
+        "راقب بعد إغلاق الصف",
+        "أزل الأوراق الشديدة",
+        "لا تفرط في النيتروجين",
+        "بذور معتمدة سليمة"
+      ]
+    },
+    "Potato___Late_blight": {
+      "displayName": "اللفحة المتأخرة (بطاطا)",
+      "crop": "بطاطا",
+      "description": "خطير جدا — ينتشر بسرعة (فيتوفثورا).",
+      "recommendations": [
+        "رشّ فورا بمبيد قوي",
+        "أزل النباتات المصابة",
+        "احفظ الدرنات السليمة",
+        "لا تعمل في الحقل وهو مبلل",
+        "أبلغ الجيران"
+      ]
+    },
+    "Potato___healthy": {
+      "displayName": "بطاطا سليمة",
+      "crop": "بطاطا",
+      "description": "النبات يبدو سليما.",
+      "recommendations": [
+        "وقاية في الرطوبة",
+        "راقب ألترناريا واللفحة أسبوعيا",
+        "تربيع جيد للتربة",
+        "تسميد متوازن"
+      ]
+    },
+    "Tomato___Bacterial_spot": {
+      "displayName": "بقع بكتيرية (طماطم)",
+      "crop": "طماطم",
+      "description": "بكتيريا تسبب بقعا صغيرة على الأوراق والثمار.",
+      "recommendations": [
+        "نحاس وقائي",
+        "تجنّب الريّ من الأعلى — بالتنقيط",
+        "أزل المادة المصابة",
+        "دور المحاصيل — لا طماطم نفس المكان سنتين",
+        "شتلات معتمدة"
+      ]
+    },
+    "Tomato___Early_blight": {
+      "displayName": "ألترناريا (طماطم)",
+      "crop": "طماطم",
+      "description": "دوائر على الأوراق السفلى.",
+      "recommendations": [
+        "مبيد من أول ظهور",
+        "أزل الأوراق السفلى",
+        "تغطية بالمهاد",
+        "تعريشة جيدة",
+        "دور مع محاصيل غير باذنجانية"
+      ]
+    },
+    "Tomato___Late_blight": {
+      "displayName": "اللفحة المتأخرة (طماطم)",
+      "crop": "طماطم",
+      "description": "خطير — سقوط سريع للأوراق.",
+      "recommendations": [
+        "رشّ فورا",
+        "أزل النبات المصاب",
+        "لا تعمل والماء على الأوراق",
+        "أزل النباتات الطوعية",
+        "أبلغ الجيران"
+      ]
+    },
+    "Tomato___healthy": {
+      "displayName": "طماطم سليمة",
+      "crop": "طماطم",
+      "description": "النبات يبدو سليما.",
+      "recommendations": [
+        "وقاية أسبوعية",
+        "راقب بعد الرطوبة",
+        "بالتنقيط أو ريّ صباحي",
+        "تعريشة وتنظيف"
+      ]
+    }
+  }
+}

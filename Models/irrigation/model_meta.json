@@ -60,7 +60,7 @@
   ],
   "target": "irrigate",
   "warn_threshold": 0.9251903807615232,
-  "act_threshold": 0.5225851703406814,
+  "act_threshold": 0.20,
   "threshold_method": "WARN: highest thr with recall>=0.85 (high->low scan) | ACT: F1-optimal with recall>=0.70 (low->high scan)",
   "calibration_method": "Platt scaling (LogisticRegression fitted on 2024 Val raw probas)",
   "training_years": [

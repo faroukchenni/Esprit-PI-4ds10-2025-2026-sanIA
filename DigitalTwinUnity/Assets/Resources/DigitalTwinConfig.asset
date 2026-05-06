@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 28de47310bb87bb45a3008e64f7f3371, type: 3}
   m_Name: DigitalTwinConfig
   m_EditorClassIdentifier: Assembly-CSharp::DigitalTwinConfig
-  backendUrl: http://localhost:8001
-  loginEmail: digitaltwin@sania.ai
-  loginPassword: sania2025
+  backendUrl: http://localhost:8000
+  loginEmail: fellah@sania.ai
+  loginPassword: sania123
   decisionEveryNDays: 1
   zones:
   - zoneName: Potato

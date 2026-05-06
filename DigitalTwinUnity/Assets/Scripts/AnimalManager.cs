@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
@@ -63,16 +64,6 @@ public class AnimalManager : MonoBehaviour
 
     private TwinSimulationManager _sim;
     private WeatherSystem         _weather;
-
-    void Start()
-    {
-        _sim     = TwinSimulationManager.Instance;
-        _weather = Object.FindFirstObjectByType<WeatherSystem>();
-        if (_sim != null) _sim.OnDayAdvanced += OnDayAdvanced;
-
-        if (transform.childCount == 0)
-            BuildAll();
-    }
 
     void OnDestroy()
     {
@@ -316,6 +307,111 @@ public class AnimalManager : MonoBehaviour
         }
     }
 
+    // ── Backend livestock sync ────────────────────────────────────────────────
+
+    [System.Serializable] class BackendAnimal
+    {
+        public string species;
+        public string status;
+        public float  weight_kg;
+    }
+    [System.Serializable] class BackendAnimalList { public BackendAnimal[] items; }
+
+    // Maps backend species strings (EN + FR) to the pen animalType strings in the scene.
+    static readonly Dictionary<string, string> SPECIES_MAP = new Dictionary<string, string>(
+        System.StringComparer.OrdinalIgnoreCase)
+    {
+        { "sheep",    "Sheep"    }, { "mouton",  "Sheep"   }, { "brebis",   "Sheep"   },
+        { "goat",     "Goats"    }, { "chevre",  "Goats"   }, { "chèvre",   "Goats"   },
+        { "horse",    "Horses"   }, { "cheval",  "Horses"  },
+        { "chicken",  "Chickens" }, { "poulet",  "Chickens"}, { "poule",    "Chickens"},
+    };
+
+    void Start()
+    {
+        _sim     = TwinSimulationManager.Instance;
+        _weather = Object.FindFirstObjectByType<WeatherSystem>();
+        if (_sim != null) _sim.OnDayAdvanced += OnDayAdvanced;
+
+        if (transform.childCount == 0) BuildAll();
+
+        StartCoroutine(LivestockSyncLoop());
+    }
+
+    IEnumerator LivestockSyncLoop()
+    {
+        // Wait until SanIAApiClient is ready (login may take a few seconds)
+        float waited = 0f;
+        while ((SanIAApiClient.Instance == null || !SanIAApiClient.Instance.IsReady) && waited < 60f)
+        {
+            yield return new WaitForSeconds(2f);
+            waited += 2f;
+        }
+
+        while (true)
+        {
+            if (SanIAApiClient.Instance != null && SanIAApiClient.Instance.IsReady)
+                FetchLivestock();
+            yield return new WaitForSeconds(60f); // refresh every 60 real seconds
+        }
+    }
+
+    void FetchLivestock()
+    {
+        SanIAApiClient.Instance.GetJson("/api/v1/animals/", (json, err) =>
+        {
+            if (err != null)
+            {
+                TwinEventLogger.Log("LIVESTOCK", $"Backend sync failed: {err}", "warn");
+                return;
+            }
+
+            // JsonUtility can't deserialize root arrays — wrap it.
+            BackendAnimalList list;
+            try { list = JsonUtility.FromJson<BackendAnimalList>("{\"items\":" + json + "}"); }
+            catch (System.Exception ex)
+            {
+                TwinEventLogger.Log("LIVESTOCK", $"Parse error: {ex.Message}", "warn");
+                return;
+            }
+
+            if (list?.items == null || list.items.Length == 0)
+            {
+                TwinEventLogger.Log("LIVESTOCK", "No animals in backend — keeping defaults.", "info");
+                return;
+            }
+
+            // Group by mapped pen type
+            var countAll    = new Dictionary<string, int>();
+            var countActive = new Dictionary<string, int>();
+            var totalWeight = new Dictionary<string, float>();
+
+            foreach (var a in list.items)
+            {
+                if (a.species == null) continue;
+                if (!SPECIES_MAP.TryGetValue(a.species.Trim(), out string penType)) continue;
+
+                countAll[penType]    = (countAll.ContainsKey(penType)    ? countAll[penType]    : 0) + 1;
+                totalWeight[penType] = (totalWeight.ContainsKey(penType) ? totalWeight[penType] : 0f) + a.weight_kg;
+                if (string.Equals(a.status, "Active", System.StringComparison.OrdinalIgnoreCase))
+                    countActive[penType] = (countActive.ContainsKey(penType) ? countActive[penType] : 0) + 1;
+            }
+
+            foreach (var kv in countAll)
+            {
+                string penType  = kv.Key;
+                int    total    = kv.Value;
+                int    active   = countActive.ContainsKey(penType) ? countActive[penType] : 0;
+                float  health   = total > 0 ? (active / (float)total) * 100f : 100f;
+                float  avgW     = total > 0 ? (totalWeight.ContainsKey(penType) ? totalWeight[penType] : 0f) / total : 50f;
+
+                UpdatePenData(penType, total, health, avgW, 38.5f);
+            }
+
+            TwinEventLogger.Log("LIVESTOCK", $"Synced {list.items.Length} animals from backend.", "info");
+        });
+    }
+
     // ── Label ─────────────────────────────────────────────────────────────────
     void RefreshLabel(AnimalPenData pen)
     {
@@ -326,10 +422,12 @@ public class AnimalManager : MonoBehaviour
         string status = pen.healthScore >= 80f ? "GOOD"
                       : pen.healthScore >= 50f ? "FAIR" : "POOR";
 
-        // Format: "HORSES: 4 / Health: 100% [GOOD]"
         tmp.text      = $"{pen.animalType.ToUpper()}: {pen.currentCount}\nHealth: {pen.healthScore:F0}% [{status}]";
         tmp.fontSize  = 6f;
         tmp.alignment = TextAlignmentOptions.Center;
+        tmp.color     = pen.healthScore >= 80f ? new Color(0.20f, 0.95f, 0.30f)   // green — good
+                      : pen.healthScore >= 50f ? new Color(1.00f, 0.75f, 0.00f)   // amber — fair
+                                               : new Color(1.00f, 0.25f, 0.20f);  // red   — poor
     }
 
     void Update()

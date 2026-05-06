@@ -185,7 +185,99 @@ public class IrrigationDecisionManager : MonoBehaviour
         _sim.OnDayAdvanced  += OnDayAdvanced;
         _sim.OnHourAdvanced += OnHourAdvanced;
 
+        // Ensure zone status panel exists — auto-create if IrrigationBridgeBuilder hasn't run
+        EnsureZoneStatusPanel();
+
+        // Show connecting state on all zone labels immediately
+        SetAllZoneLabelsPlaceholder("-- CONNECTING --", new Color(0.55f, 0.55f, 0.55f));
+
         TwinEventLogger.Log("IRRIGATION", "IrrigationDecisionManager ready — waiting for login.", "info");
+
+        StartCoroutine(DiseaseSyncLoop());
+    }
+
+    // ── Disease sync from backend ─────────────────────────────────────────────
+
+    [System.Serializable] class BackendScan
+    {
+        public string crop_type;
+        public string predicted_disease;
+        public float  confidence;
+    }
+    [System.Serializable] class BackendScanList { public BackendScan[] items; }
+
+    // Maps backend crop_type strings to zone names used by DiseaseManager
+    static readonly System.Collections.Generic.Dictionary<string, string> CROP_TO_ZONE =
+        new System.Collections.Generic.Dictionary<string, string>(System.StringComparer.OrdinalIgnoreCase)
+    {
+        { "potato", "Potato" }, { "tomato", "Tomato" },
+        { "grape",  "Grape"  }, { "apple",  "Apple"  },
+        { "pomme de terre", "Potato" }, { "tomate", "Tomato" },
+        { "raisin", "Grape"  }, { "pomme",  "Apple"  },
+    };
+
+    // Track last-seen scan IDs so we only apply each detection once
+    readonly System.Collections.Generic.HashSet<string> _appliedScans =
+        new System.Collections.Generic.HashSet<string>();
+
+    /// <summary>Latest disease name per zone from backend scans. Read by FuturisticUI for RAG queries.</summary>
+    public readonly Dictionary<string, string> ActiveDiseases =
+        new Dictionary<string, string>();
+
+    IEnumerator DiseaseSyncLoop()
+    {
+        // Wait for API login before polling
+        float waited = 0f;
+        while ((_api == null || !_api.IsReady) && waited < 60f)
+        { yield return new WaitForSeconds(2f); waited += 2f; }
+
+        while (true)
+        {
+            if (_api != null && _api.IsReady)
+                _api.GetJson("/api/v1/scans/", ApplyDiseaseScans);
+            yield return new WaitForSeconds(30f); // poll every 30 real seconds
+        }
+    }
+
+    void ApplyDiseaseScans(string json, string err)
+    {
+        if (err != null) return;
+        if (string.IsNullOrEmpty(json)) return;
+
+        BackendScanList list = null;
+        try
+        {
+            // Backend may return array [...] or object {"items":[...]}
+            string trimmed = json.Trim();
+            if (trimmed.StartsWith("["))
+                list = JsonUtility.FromJson<BackendScanList>("{\"items\":" + trimmed + "}");
+            else
+                list = JsonUtility.FromJson<BackendScanList>(trimmed);
+        }
+        catch { return; }
+        if (list?.items == null) return;
+
+        DiseaseManager dm = DiseaseManager.Instance;
+        if (dm == null) return;
+
+        foreach (var scan in list.items)
+        {
+            if (scan.crop_type == null || scan.predicted_disease == null) continue;
+            if (scan.predicted_disease.ToLower().Contains("healthy")) continue;
+            if (scan.confidence < 0.5f) continue; // ignore low-confidence
+
+            string key = scan.crop_type + "_" + scan.predicted_disease;
+            if (_appliedScans.Contains(key)) continue; // already applied
+            _appliedScans.Add(key);
+
+            if (!CROP_TO_ZONE.TryGetValue(scan.crop_type.Trim(), out string zoneName)) continue;
+
+            float severity = Mathf.Clamp01(scan.confidence);
+            dm.InfectZone(zoneName, severity);
+            ActiveDiseases[zoneName] = scan.predicted_disease; // expose for RAG treatment queries
+            TwinEventLogger.Log("DISEASE",
+                $"{scan.predicted_disease} on {zoneName} — {severity * 100f:F0}% (backend scan)", "warn");
+        }
     }
 
     private void OnDestroy()
@@ -271,8 +363,16 @@ public class IrrigationDecisionManager : MonoBehaviour
         if (!_api.IsReady)
         {
             TwinEventLogger.Log("IRRIGATION", "Backend not ready — skipping agent decision.", "warn");
+            SetAllZoneLabelsPlaceholder("OFFLINE", new Color(0.80f, 0.30f, 0.20f));
             return;
         }
+
+        // Rain active → log it, but still run the agent — it already sees the
+        // high moisture values that rain produces, so it will decide SKIP on its own
+        // if the soil is adequately hydrated.  Hard-blocking here prevented irrigation
+        // from ever firing when the Open-Meteo forecast reported any precipitation.
+        if (_weather != null && _weather.isRaining)
+            TwinEventLogger.Log("IRRIGATION", "Rain detected — agent will factor hydration into decision.", "info");
 
         RunZoneDecisions();
     }
@@ -301,6 +401,16 @@ public class IrrigationDecisionManager : MonoBehaviour
                     TwinEventLogger.Log("IRRIGATION",
                         $"[{capturedZone}] Decision error: {error}", "warn");
                     return;
+                }
+
+                // If backend returns 0 volume on an IRRIGATE decision, compute locally
+                // using FAO-56: deficit_mm = (FC - smc) * rootDepth_m * 1000 / efficiency
+                if (result.irrigate && result.volume_m3 <= 0f)
+                {
+                    float deficitMm = Mathf.Max(0f, (req.field_capacity_pct - req.soil_moisture_pct) / 100f
+                                      * req.root_zone_depth_m * 1000f);
+                    float grossMm   = deficitMm / Mathf.Max(0.01f, req.application_efficiency_pct / 100f);
+                    result.volume_m3 = Mathf.Round(grossMm * req.area_m2 / 1000f * 100f) / 100f;
                 }
 
                 HandleDecision(capturedZone, result, capturedFC, req);
@@ -383,6 +493,15 @@ public class IrrigationDecisionManager : MonoBehaviour
         // Offsetting to day 60 puts all crops in active growth where irrigation decisions fire.
         int cropAge = (60 + currentDay) % 365;
 
+        // Twin weather → backend uses these for rain_mm / ETc / rain guard (see irrigation_agent.py)
+        float twinRain = -1f;
+        float twinEt0  = -1f;
+        if (_weather != null)
+        {
+            twinRain = _weather.GetReportedRainMmForIrrigationAgent(currentDay);
+            twinEt0  = Mathf.Max(0f, _weather.currentET0_mm);
+        }
+
         return new IrrigationRequest
         {
             field_id                  = zone.fieldId,
@@ -395,7 +514,9 @@ public class IrrigationDecisionManager : MonoBehaviour
             wilting_point_pct         = zone.wiltingPoint_pct,
             area_m2                   = zone.area_m2,
             root_zone_depth_m         = zone.rootZoneDepth_m,
-            application_efficiency_pct = zone.appEfficiency_pct
+            application_efficiency_pct = zone.appEfficiency_pct,
+            twin_rain_mm_24h          = twinRain,
+            twin_et0_mm               = twinEt0
         };
     }
 
@@ -474,6 +595,8 @@ public class IrrigationDecisionManager : MonoBehaviour
 
     private void HandleDecision(string zoneName, IrrigationDecisionResult result, float fieldCapacity, IrrigationRequest req)
     {
+        // Model decision is used as-is — no fallback override.
+
         // ── Disease guard: overwatering spreads fungal disease ─────────────────
         // If >40% of the zone is actively infected, hold irrigation to limit spread.
         float infectionPct = DiseaseManager.Instance?.GetZoneInfectionPct(zoneName) ?? 0f;
@@ -674,10 +797,102 @@ public class IrrigationDecisionManager : MonoBehaviour
 
     /// <summary>
     /// Public method for UI buttons — manually trigger agent decisions for all zones.
-    /// Useful for demos where you don't want to wait for the next simulated day.
     /// </summary>
     public void ForceDecisionNow()
     {
-        OnDayAdvanced(_sim != null ? _sim.currentDay : 0);
+        if (_api != null && _api.IsReady)
+            RunZoneDecisions();
+        else
+            TwinEventLogger.Log("IRRIGATION", "ForceDecisionNow: backend not ready.", "warn");
+    }
+
+    // ── Zone label placeholder helper ─────────────────────────────────────────
+
+    private static readonly string[] ZONE_NAMES = { "Potato", "Tomato", "Grape", "Apple" };
+
+    private void SetAllZoneLabelsPlaceholder(string text, Color color)
+    {
+        foreach (string zone in ZONE_NAMES)
+        {
+            GameObject go = GameObject.Find($"ZoneStatus_{zone}");
+            if (go == null) continue;
+            TMPro.TMP_Text lbl = go.GetComponent<TMPro.TMP_Text>();
+            if (lbl == null) continue;
+            lbl.text  = $"{zone.ToUpper()}: {text}";
+            lbl.color = color;
+        }
+    }
+
+    // ── Auto-create irrigation status panel on Canvas ─────────────────────────
+
+    /// <summary>
+    /// Builds the SanIA IRRIGATION AI panel on the Canvas if it was never placed
+    /// by IrrigationBridgeBuilder. Safe to call multiple times — skips if already present.
+    /// </summary>
+    private void EnsureZoneStatusPanel()
+    {
+        // If all labels already exist, nothing to do
+        bool allExist = true;
+        foreach (string z in ZONE_NAMES)
+            if (GameObject.Find($"ZoneStatus_{z}") == null) { allExist = false; break; }
+        if (allExist) return;
+
+        UnityEngine.Canvas canvas = FindAnyObjectByType<UnityEngine.Canvas>();
+        if (canvas == null) return;
+
+        // Panel container — top LEFT (keeps top-right free for SIM SPEED)
+        GameObject panel = new GameObject("IrrigationAIPanel");
+        panel.transform.SetParent(canvas.transform, false);
+
+        UnityEngine.RectTransform prt = panel.AddComponent<UnityEngine.RectTransform>();
+        prt.anchorMin        = new Vector2(0f, 1f);
+        prt.anchorMax        = new Vector2(0f, 1f);
+        prt.pivot            = new Vector2(0f, 1f);
+        prt.anchoredPosition = new Vector2(10f, -10f); // top-left corner
+        prt.sizeDelta        = new Vector2(260f, 20f + ZONE_NAMES.Length * 20f + 10f);
+
+        UnityEngine.UI.Image bg = panel.AddComponent<UnityEngine.UI.Image>();
+        bg.color = new Color(0.04f, 0.04f, 0.12f, 0.88f);
+
+        // Title
+        CreatePanelLabel(panel, "IrrigationTitle",
+            new Vector2(0,1), new Vector2(1,1), new Vector2(6,-4), new Vector2(-6, 16),
+            "<b>SanIA IRRIGATION AI</b>", 8f, new Color(0.3f, 0.7f, 1f));
+
+        // One status label per zone
+        for (int i = 0; i < ZONE_NAMES.Length; i++)
+        {
+            string zone = ZONE_NAMES[i];
+            float  yOff = -22f - i * 20f;
+
+            if (GameObject.Find($"ZoneStatus_{zone}") != null) continue; // already exists
+
+            CreatePanelLabel(panel, $"ZoneStatus_{zone}",
+                new Vector2(0,1), new Vector2(1,1), new Vector2(6, yOff), new Vector2(-6, 18),
+                $"{zone.ToUpper()}: -- CONNECTING --", 7.5f, new Color(0.55f, 0.55f, 0.55f));
+        }
+
+        Debug.Log("[IrrigationDecisionManager] Zone status panel auto-created on Canvas.");
+    }
+
+    static void CreatePanelLabel(
+        GameObject parent, string name,
+        Vector2 anchorMin, Vector2 anchorMax,
+        Vector2 anchoredPos, Vector2 sizeDelta,
+        string text, float fontSize, Color color)
+    {
+        GameObject go = new GameObject(name);
+        go.transform.SetParent(parent.transform, false);
+        UnityEngine.RectTransform rt = go.AddComponent<UnityEngine.RectTransform>();
+        rt.anchorMin        = anchorMin;
+        rt.anchorMax        = anchorMax;
+        rt.pivot            = new Vector2(0f, 1f);
+        rt.anchoredPosition = anchoredPos;
+        rt.sizeDelta        = sizeDelta;
+        TMPro.TextMeshProUGUI tmp = go.AddComponent<TMPro.TextMeshProUGUI>();
+        tmp.text      = text;
+        tmp.fontSize  = fontSize;
+        tmp.color     = color;
+        tmp.alignment = TMPro.TextAlignmentOptions.Left;
     }
 }

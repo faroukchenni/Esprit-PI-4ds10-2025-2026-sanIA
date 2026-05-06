@@ -25,6 +25,10 @@ public class FuturisticUI : MonoBehaviour
     private int maxLogLines = 5;
     private List<string> logs = new List<string>();
 
+    // Treatment hint — shown when any zone has active disease
+    private bool  _diseaseActive   = false;
+    private float _treatFeedback   = 0f; // countdown for "Treatment applied!" flash
+
     [Header("References")]
     public CyberGrid grid;
     public ScenarioManager scenarioManager;
@@ -36,6 +40,8 @@ public class FuturisticUI : MonoBehaviour
         InvokeRepeating("UpdateRealTelemetry", 1f, 1f);
         // Clean up any runtime UI rows left over from RainUIBootstrapper
         DestroyRuntimeUIRows();
+        // Remove any stale "Treat" buttons left in the scene
+        DestroyTreatButtons();
 
         // Report RainController state
         RainController rc = Object.FindFirstObjectByType<RainController>();
@@ -76,6 +82,8 @@ public class FuturisticUI : MonoBehaviour
         float avgTemp = totalTemp / count;
         float avgHum = (totalHum / count) * 100f; 
         
+        _diseaseActive = diseaseCount > 0;
+
         string status = "STABLE";
         if (weather != null && weather.isDrought) status = "HEATWAVE";
         else if (diseaseCount > 0) status = $"OUTBREAK ({diseaseCount} units)";
@@ -352,7 +360,7 @@ public class FuturisticUI : MonoBehaviour
         }
     }
 
-    // ── Keyboard debug shortcuts (D / H / I / R / W) ─────────────────────────
+    // ── Keyboard debug shortcuts (D / H / I / R / W / M) ────────────────────
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.D)) OnDrought();
@@ -360,6 +368,79 @@ public class FuturisticUI : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.I)) OnDisease();
         if (Input.GetKeyDown(KeyCode.R)) OnReset();
         if (Input.GetKeyDown(KeyCode.W)) OnToggleRain();
+        if (Input.GetKeyDown(KeyCode.M)) TreatAllZones();
+
+        if (_treatFeedback > 0f) _treatFeedback -= Time.deltaTime;
+    }
+
+    // ── OnGUI treatment hint ──────────────────────────────────────────────────
+    void OnGUI()
+    {
+        GUIStyle style = new GUIStyle(GUI.skin.label);
+        style.fontSize  = 16;
+        style.fontStyle = FontStyle.Bold;
+        style.alignment = TextAnchor.MiddleCenter;
+
+        if (_treatFeedback > 0f)
+        {
+            style.normal.textColor = new Color(0.2f, 1f, 0.45f); // bright green
+            GUI.Label(new Rect(Screen.width / 2 - 200, Screen.height - 80, 400, 40),
+                "Treatment applied! Field restored.", style);
+        }
+        else if (_diseaseActive)
+        {
+            // Pulsing alpha so the hint draws attention without being distracting
+            float pulse = 0.6f + 0.4f * Mathf.Sin(Time.time * 2.5f);
+            style.normal.textColor = new Color(1f, 0.85f, 0.2f, pulse); // warm yellow
+            GUI.Label(new Rect(Screen.width / 2 - 200, Screen.height - 80, 400, 40),
+                "Press M to apply treatment", style);
+        }
+    }
+
+    // ── Whole-field treatment (M key) ────────────────────────────────────────
+    void TreatAllZones()
+    {
+        string[] zoneNames = { "Potato", "Tomato", "Grape", "Apple" };
+        int treated = 0;
+        foreach (string zone in zoneNames)
+        {
+            if (DiseaseManager.Instance != null)
+            {
+                DiseaseManager.Instance.TreatZone(zone);
+                treated++;
+            }
+        }
+
+        // Restore full field to initial visual state
+        CyberGrid g = GetGrid();
+        if (g != null) g.RestoreAllOriginals();
+
+        GetSprinklers()?.DeactivateAll();
+
+        if (temperatureText != null) temperatureText.text = "25.0°C";
+        RenderSettings.ambientLight = new Color(0.4f, 0.4f, 0.4f);
+        Light sun = RenderSettings.sun;
+        if (sun != null) sun.color = new Color(1f, 0.957f, 0.839f);
+
+        _diseaseActive = false;
+        _treatFeedback = 3f; // show feedback message for 3 seconds
+
+        TwinEventLogger.Log("TREATMENT", $"Full-field treatment applied (M key) — {treated} zones cleared", "info");
+        Debug.Log("[FuturisticUI] M key: TreatAllZones applied to all 4 zones.");
+    }
+
+    // ── Auto-remove any "Treat" buttons from the scene ───────────────────────
+    void DestroyTreatButtons()
+    {
+        Button[] all = Object.FindObjectsByType<Button>(FindObjectsSortMode.None);
+        foreach (Button btn in all)
+        {
+            if (btn.name.ToLower().Contains("treat"))
+            {
+                Debug.Log($"[FuturisticUI] Removing stale Treat button: {btn.name}");
+                Destroy(btn.gameObject);
+            }
+        }
     }
 
     // ── Legacy simulation buttons ─────────────────────────────────────────────

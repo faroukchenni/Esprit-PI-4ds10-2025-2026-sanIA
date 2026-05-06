@@ -47,7 +47,7 @@ public static class BackendBuilder
         {
             FileName        = "cmd.exe",
             Arguments       = $"/k cd /d \"{path}\" && \"{python}\" -m uvicorn app.main:app " +
-                              "--reload --host 127.0.0.1 --port 8001",
+                              "--reload --host 127.0.0.1 --port 8000",
             UseShellExecute = true,
             CreateNoWindow  = false,
         };

@@ -26,6 +26,10 @@ public class SprinklerSystem : MonoBehaviour
     [Tooltip("Drag Assets/Prefabs/Sprinkler.prefab here (auto-found if blank)")]
     public GameObject sprinklerPrefab;
 
+    [Tooltip("Assign a URP Particles/Unlit material (transparent, any color — tint is applied at runtime). " +
+             "Leave null to auto-create; assign a proper material here if particles appear pink.")]
+    public Material waterParticleMaterial;
+
     [Header("References")]
     [Tooltip("CyberGrid reference for spawnedCells soil colour lerp. Auto-found if blank.")]
     public CyberGrid cyberGrid;
@@ -74,7 +78,6 @@ public class SprinklerSystem : MonoBehaviour
     {
         // Grid constants matching TwinSimulationManager / CyberGrid
         float sp = 2.2f;   // cell spacing
-        int centerIdx = 10; // road cells are 9-10 (centerX = gridWidth/2 = 10)
 
         // Zone world-space extents [minX, maxX, minZ, maxZ]
         // Col indices for zones: left=0-8, right=11-19 (after 2-wide road at 9-10)
@@ -124,7 +127,10 @@ public class SprinklerSystem : MonoBehaviour
                 if (ps == null) ps = sprinklerGO.GetComponentInChildren<ParticleSystem>();
 
                 if (ps != null)
+                {
+                    FixParticleMaterial(ps);
                     zoneInfo.sprinklers.Add(ps);
+                }
                 else
                     Debug.LogError($"[SprinklerSystem] No ParticleSystem on sprinkler prefab for {zd.name}[{i}]!");
             }
@@ -146,14 +152,14 @@ public class SprinklerSystem : MonoBehaviour
 
         // ── Main module ───────────────────────────────────────────────────
         var main = ps.main;
-        main.startSpeed       = 4f;
-        main.startSize        = 0.08f;
-        main.startLifetime    = 2f;
-        main.startColor       = new Color(0.529f, 0.808f, 0.922f, 0.8f); // #87CEEB sky blue
-        main.simulationSpace  = ParticleSystemSimulationSpace.World;
-        main.loop             = true;
-        main.playOnAwake      = false;
-        main.maxParticles     = 500;
+        main.startSpeed      = 4f;
+        main.startSize       = 0.08f;
+        main.startLifetime   = 2f;
+        main.startColor      = new Color(0.529f, 0.808f, 0.922f, 0.8f); // #87CEEB sky blue
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+        main.loop            = true;
+        main.playOnAwake     = false;
+        main.maxParticles    = 500;
 
         // ── Emission ──────────────────────────────────────────────────────
         var emission = ps.emission;
@@ -167,24 +173,7 @@ public class SprinklerSystem : MonoBehaviour
         shape.angle     = 60f;
         shape.radius    = 0.05f;
 
-        // ── Renderer material ─────────────────────────────────────────────
-        ParticleSystemRenderer psr = go.GetComponent<ParticleSystemRenderer>();
-        psr.renderMode = ParticleSystemRenderMode.Billboard;
-
-        // Clone Unity's auto-assigned default particle material (always valid, never null).
-        // Shader.Find() returns null at runtime if the shader isn't in Always Included Shaders,
-        // which creates a pink error material. Cloning sharedMaterial avoids that entirely.
-        Color waterColor = new Color(0.529f, 0.808f, 0.922f, 0.85f);
-        Material mat = new Material(psr.sharedMaterial);
-        if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", waterColor);
-        if (mat.HasProperty("_Color"))     mat.SetColor("_Color",     waterColor);
-        mat.color    = waterColor;
-        psr.material = mat;
-
-        // ── Gravity & colour over lifetime ────────────────────────────────
-        var velocity = ps.velocityOverLifetime;
-        velocity.enabled = false;
-
+        // ── Colour over lifetime ──────────────────────────────────────────
         var col = ps.colorOverLifetime;
         col.enabled = true;
         Gradient g = new Gradient();
@@ -197,12 +186,82 @@ public class SprinklerSystem : MonoBehaviour
             new GradientAlphaKey[]
             {
                 new GradientAlphaKey(0.9f, 0f),
-                new GradientAlphaKey(0f,   1f)   // fade out at end of lifetime
+                new GradientAlphaKey(0f,   1f)
             }
         );
         col.color = g;
 
+        // ── Renderer mode ─────────────────────────────────────────────────
+        ParticleSystemRenderer psr = go.GetComponent<ParticleSystemRenderer>();
+        psr.renderMode = ParticleSystemRenderMode.Billboard;
+
+        // Material is applied via FixParticleMaterial called after Build returns.
         return go;
+    }
+
+    // ── Material fix — applied to every particle system (prefab or procedural) ──
+
+    static readonly Color _waterBlue = new Color(0.529f, 0.808f, 0.922f, 0.85f);
+
+    /// <summary>
+    /// Ensures the ParticleSystemRenderer uses a URP-compatible blue material.
+    /// Priorities: (1) waterParticleMaterial inspector field, (2) any URP Particles shader,
+    /// (3) any URP Unlit shader. Pink = Built-in default — this method replaces it.
+    /// </summary>
+    void FixParticleMaterial(ParticleSystem ps)
+    {
+        ParticleSystemRenderer psr = ps.GetComponent<ParticleSystemRenderer>();
+        if (psr == null) return;
+
+        // If the user provided a material in the inspector, clone it and tint it.
+        if (waterParticleMaterial != null)
+        {
+            Material m = new Material(waterParticleMaterial);
+            ApplyWaterColor(m);
+            psr.material = m;
+            return;
+        }
+
+        // Otherwise try to find a URP particle/unlit shader at runtime.
+        string[] candidates = {
+            "Universal Render Pipeline/Particles/Unlit",
+            "Universal Render Pipeline/Particles/Simple Lit",
+            "Universal Render Pipeline/Particles/Lit",
+            "Universal Render Pipeline/Unlit",
+        };
+
+        Shader sh = null;
+        foreach (string sn in candidates)
+        {
+            sh = Shader.Find(sn);
+            if (sh != null) break;
+        }
+
+        if (sh == null)
+        {
+            Debug.LogWarning("[SprinklerSystem] URP particle shader not found — assign 'waterParticleMaterial' in the inspector to fix pink particles.");
+            return;
+        }
+
+        Material mat = new Material(sh);
+        // URP transparent setup
+        mat.SetFloat("_Surface",  1f); // 0=Opaque, 1=Transparent
+        mat.SetFloat("_Blend",    0f); // Alpha blend
+        mat.SetFloat("_ZWrite",   0f);
+        mat.SetInt("_SrcBlend",   (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+        mat.SetInt("_DstBlend",   (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+        mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+        mat.SetOverrideTag("RenderType", "Transparent");
+        mat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+        ApplyWaterColor(mat);
+        psr.material = mat;
+    }
+
+    static void ApplyWaterColor(Material m)
+    {
+        if (m.HasProperty("_BaseColor")) m.SetColor("_BaseColor", _waterBlue);
+        if (m.HasProperty("_Color"))     m.SetColor("_Color",     _waterBlue);
+        if (m.HasProperty("_TintColor")) m.SetColor("_TintColor", _waterBlue);
     }
 
     // ── Public API ────────────────────────────────────────────────────────
@@ -300,8 +359,7 @@ public class SprinklerSystem : MonoBehaviour
                 if (cell.zoneName != zoneName || cell.soilTile == null) continue;
                 Renderer r = cell.soilTile.GetComponentInChildren<Renderer>();
                 if (r == null) continue;
-                if (r.material.HasProperty("_BaseColor")) r.material.SetColor("_BaseColor", c);
-                r.material.color = c;
+                MaterialSafeUtil.ApplyBaseTint(r.material, c);
             }
 
             yield return null;

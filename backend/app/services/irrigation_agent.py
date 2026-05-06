@@ -166,13 +166,22 @@ class IrrigationAgentService:
         return self._history[field_id]
 
     def _get_lags(self, field_id: str, current_smd: float, current_temp: float) -> Tuple[List[float], List[float]]:
-        """Return 7 SMD lags and 7 temperature lags, filling missing history with current value."""
+        """Return 7 SMD lags and 7 temperature lags.
+
+        When history is short, pad with a linear ramp from 0 → current_smd so the
+        model sees a realistic *rising* depletion trend instead of a flat line.
+        A flat-padded history produces near-zero irrigation probabilities because
+        the model was trained on sequences with natural daily variation.
+        """
         buf = list(self._get_buffer(field_id))  # oldest first, up to 7 readings
-        # Pad to 7 if history is short
-        while len(buf) < 7:
-            buf.insert(0, (current_smd, current_temp))
+        n_missing = 7 - len(buf)
+        for j in range(n_missing):
+            # Ramp: oldest synthetic reading starts near 0, rises to current_smd
+            fraction = j / max(n_missing, 1)
+            padded_smd = round(current_smd * fraction, 4)
+            buf.insert(0, (padded_smd, current_temp))
         # buf[-1] = most recent previous, buf[-7] = oldest
-        smd_lags  = [buf[-(i)]  [0] for i in range(1, 8)]  # lag_1 = yesterday, ..., lag_7
+        smd_lags  = [buf[-(i)][0] for i in range(1, 8)]  # lag_1 = yesterday, ..., lag_7
         temp_lags = [buf[-(i)][1] for i in range(1, 8)]
         return smd_lags, temp_lags
 
@@ -225,11 +234,22 @@ class IrrigationAgentService:
 
         kc  = _get_kc(crop, req.crop_age_days)
 
-        # Fetch weather for ET0 and rain guard
+        # Weather for ET0 / rain — prefer Digital Twin physics when provided so
+        # rain_mm and ETc match what the field was actually "rained on" in sim.
         weather = self._fetch_weather()
-        et0_mm  = weather.get("et0_forecast_mm", 5.0)
-        etc_mm  = round(et0_mm * kc, 3)
-        rain_24h = weather.get("rain_mm_24h", 0.0)
+        et0_mm = (
+            float(req.twin_et0_mm)
+            if req.twin_et0_mm >= 0.0
+            else weather.get("et0_forecast_mm", 5.0)
+        )
+        etc_mm = round(et0_mm * kc, 3)
+        rain_24h = (
+            float(req.twin_rain_mm_24h)
+            if req.twin_rain_mm_24h >= 0.0
+            else weather.get("rain_mm_24h", 0.0)
+        )
+
+        twin_wx = req.twin_rain_mm_24h >= 0.0 or req.twin_et0_mm >= 0.0
 
         # Rain guard
         if rain_24h > etc_mm:
@@ -238,14 +258,20 @@ class IrrigationAgentService:
                 field_id=req.field_id, decision_label="RAIN_GUARD",
                 confidence=0.0, irrigate=False, volume_m3=0.0
             )
+            weather_ctx = {
+                **weather,
+                "et0_mm_used": et0_mm,
+                "rain_mm_used": rain_24h,
+                "twin_override": twin_wx,
+            }
             return AgentDecisionResponse(
                 irrigate=False, confidence=0.0, volume_m3=0.0,
                 decision_label="RAIN_GUARD",
-                reason=f"Rain guard: forecast {rain_24h:.1f} mm > ETc {etc_mm:.1f} mm",
+                reason=f"Rain guard: {rain_24h:.1f} mm > ETc {etc_mm:.1f} mm",
                 warn_threshold=self._warn_thr, act_threshold=self._act_thr,
                 model_version=self._version,
                 lag_features_used=len(self._get_buffer(req.field_id)),
-                weather_context=weather
+                weather_context=weather_ctx
             )
 
         # Lags
@@ -261,6 +287,14 @@ class IrrigationAgentService:
         }
 
         # Build feature row in exact ALL_FEATS order
+        # Merge twin context into weather_context for logging / UI
+        weather = {
+            **weather,
+            "et0_mm_used": et0_mm,
+            "rain_mm_used": rain_24h,
+            "twin_override": twin_wx,
+        }
+
         row = {
             "SMD":           smd,
             "Kc":            kc,
@@ -293,11 +327,11 @@ class IrrigationAgentService:
             cal = max(cal * 0.90, 0.0)
             reason_parts.append("rain forecast -10%")
 
-        # Decision
-        if cal >= self._act_thr:
-            label, irrigate = "IRRIGATE", True
-        elif cal >= self._warn_thr:
+        # Decision — warn_thr > act_thr so check WARN first to avoid dead branch
+        if cal >= self._warn_thr:
             label, irrigate = "WARN", True
+        elif cal >= self._act_thr:
+            label, irrigate = "IRRIGATE", True
         else:
             label, irrigate = "SKIP", False
 

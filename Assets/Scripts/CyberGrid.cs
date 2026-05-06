@@ -85,6 +85,9 @@ public class CyberGrid : MonoBehaviour
     /// <summary>Called by DiseaseManager when a cell is newly infected.</summary>
     public void StartInfectionFlash(int x, int y) => _flashTimers[new Vector2Int(x, y)] = 0.5f;
 
+    /// <summary>Remove infection flash so treated cells do not keep pulsing tints.</summary>
+    public void ClearInfectionFlash(int x, int y) => _flashTimers.Remove(new Vector2Int(x, y));
+
     // Per-zone shared material instances — avoids checkerboard
     private readonly Dictionary<CropType, Material> _zoneSoilMats = new Dictionary<CropType, Material>();
 
@@ -128,14 +131,13 @@ public class CyberGrid : MonoBehaviour
 
         Material mat = new Material(sourceMat);
         Color c = ZoneSoilColor(zone);
-        if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", c);
-        else mat.color = c;
-        if (mat.HasProperty("_EmissionColor")) mat.SetColor("_EmissionColor", Color.black);
+        MaterialSafeUtil.ApplyBaseTint(mat, c);
+        MaterialSafeUtil.ApplyEmission(mat, Color.black);
         _zoneSoilMats[zone] = mat;
         return mat;
     }
 
-    static Color ZoneSoilColor(CropType zone)
+    public static Color ZoneSoilColor(CropType zone)
     {
         switch (zone)
         {
@@ -369,10 +371,7 @@ public class CyberGrid : MonoBehaviour
             if (cell.zoneName != zoneName || cell.soilTile == null) continue;
             Renderer r = cell.soilTile.GetComponentInChildren<Renderer>();
             if (r != null)
-            {
-                r.material.SetColor("_BaseColor", color);
-                r.material.color = color;
-            }
+                MaterialSafeUtil.ApplyBaseTint(r.material, color);
         }
     }
 
@@ -385,8 +384,7 @@ public class CyberGrid : MonoBehaviour
             foreach (Renderer r in cell.cropObject.GetComponentsInChildren<Renderer>())
             {
                 if (r == null) continue;
-                r.material.SetColor("_BaseColor", color);
-                r.material.color = color;
+                MaterialSafeUtil.ApplyBaseTint(r.material, color);
             }
         }
     }
@@ -398,10 +396,7 @@ public class CyberGrid : MonoBehaviour
             if (cell.soilTile == null) continue;
             Renderer r = cell.soilTile.GetComponentInChildren<Renderer>();
             if (r != null)
-            {
-                r.material.SetColor("_BaseColor", color);
-                r.material.color = color;
-            }
+                MaterialSafeUtil.ApplyBaseTint(r.material, color);
         }
     }
 
@@ -414,8 +409,7 @@ public class CyberGrid : MonoBehaviour
             foreach (Renderer r in cell.cropObject.GetComponentsInChildren<Renderer>())
             {
                 if (r == null) continue;
-                r.material.SetColor("_BaseColor", color);
-                r.material.color = color;
+                MaterialSafeUtil.ApplyBaseTint(r.material, color);
             }
         }
     }
@@ -429,10 +423,7 @@ public class CyberGrid : MonoBehaviour
             {
                 Renderer r = cell.soilTile.GetComponentInChildren<Renderer>();
                 if (r != null)
-                {
-                    r.material.SetColor("_BaseColor", cell.originalColor);
-                    r.material.color = cell.originalColor;
-                }
+                    MaterialSafeUtil.ApplyBaseTint(r.material, cell.originalColor);
             }
             // crop scales are restored automatically by UpdateVisuals (scenarioActive = false)
         }
@@ -515,8 +506,9 @@ public class CyberGrid : MonoBehaviour
                     foreach (Renderer r in gridRenderers[x, y])
                     {
                         if (r == null) continue;
-                        if (r.material.HasProperty("_BaseColor")) r.material.SetColor("_BaseColor", cropColor);
-                        r.material.SetColor("_EmissionColor", cropColor != Color.white ? cropColor * 0.3f : Color.black);
+                        MaterialSafeUtil.ApplyBaseTint(r.material, cropColor);
+                        MaterialSafeUtil.ApplyEmission(r.material,
+                            cropColor != Color.white ? cropColor * 0.3f : Color.black);
                     }
 
                     float healthFactor = 0.3f + cell.VegetationHealth * 0.7f;
@@ -528,8 +520,7 @@ public class CyberGrid : MonoBehaviour
                     && cell.IsInfected && !cell.IsTreated
                     && (curDay - cell.InfectionDay) >= 3)
                 {
-                    soilRenderers[x, y].material.SetColor("_BaseColor", DiseaseColorSoil);
-                    soilRenderers[x, y].material.color = DiseaseColorSoil;
+                    MaterialSafeUtil.ApplyBaseTint(soilRenderers[x, y].material, DiseaseColorSoil);
                 }
             }
         }

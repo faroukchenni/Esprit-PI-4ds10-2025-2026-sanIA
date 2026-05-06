@@ -1,0 +1,190 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sania Project - Architecture & Workflow Updates</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2980b9;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #16a085;
+        }
+        .section {
+            margin-bottom: 30px;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 5px solid #2980b9;
+        }
+        .change-highlight {
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        ul {
+            list-style-type: square;
+        }
+        code {
+            background: #e0e0e0;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .mermaid {
+            margin: 20px 0;
+            text-align: center;
+        }
+        @media print {
+            body {
+                max-width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            .section {
+                break-inside: avoid;
+                border: 1px solid #ddd;
+            }
+            h1, h2, h3 {
+                page-break-after: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Sania Project - Architecture & Workflow Updates</h1>
+    
+    <p>This document details the architectural and workflow enhancements for the Sania project, introducing the "Conversational Brain" and "Agentic AI Assistant".</p>
+
+    <h2>1. Architecture Modifications</h2>
+    <p><strong>Goal:</strong> Transform the system from a standard application to an advanced Agentic AI system by integrating a Conversational Brain in the Backend and a Voice Interface in the Frontend.</p>
+
+    <div class="section">
+        <h3>Layer 1: Frontend (Interfaces)</h3>
+        <p><span class="change-highlight">Change:</span> Addition of "Avatar Interface" module.</p>
+        <ul>
+            <li><strong>Components:</strong> Mobile App (Flutter) and Digital Twin (Unity).</li>
+            <li><strong>Functionality:</strong> Integration of <strong>STT (Speech-to-Text)</strong> to listen to the farmer and <strong>TTS (Text-to-Speech)</strong> for the avatar's response.</li>
+            <li><strong>Justification:</strong> enhances accessibility for farmers with lower literacy levels by enabling voice interaction instead of typing.</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h3>Layer 2: Backend (API & Business Logic)</h3>
+        <p><span class="change-highlight">MAJOR CHANGE:</span> Introduction of the "AI Orchestrator".</p>
+        <p>This component differentiates the system from a basic chatbot, acting as the intelligent core.</p>
+        <ul>
+            <li><strong>Component A: LLM Engine</strong> (e.g., GPT-4o, Llama 3 via API): Serves as the linguistic engine for understanding and generation.</li>
+            <li><strong>Component B: LangChain Agent (The Orchestrator)</strong>: The decision-making unit that directs actions. It has access to specific <strong>Tools</strong>:
+                <ul>
+                    <li><em>Tool 1 (Text-to-SQL):</em> Interrogates the <strong>TimescaleDB</strong> (e.g., "What is the current humidity?").</li>
+                    <li><em>Tool 2 (RAG - Knowledge Base):</em> Reads agronomic <strong>PDF documents</strong> (e.g., "How to treat mildew?").</li>
+                    <li><em>Tool 3 (IoT Actions):</em> Activates valves/actuators via the <strong>MQTT API</strong>.</li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h3>Layer 4: Storage</h3>
+        <p><span class="change-highlight">Change:</span> Addition of Vector Store.</p>
+        <ul>
+            <li><strong>Implementation:</strong> Vector Store or <code>pgvector</code> extension on existing PostgreSQL.</li>
+            <li><strong>Purpose:</strong> To store the "memory" of the avatar and technical documents (RAG) as mathematical vectors for efficient retrieval.</li>
+        </ul>
+    </div>
+
+    <h2>2. Workflow Modifications</h2>
+    <p class="change-highlight">New Workflow: "The Avatar Interaction Loop"</p>
+    <p>This workflow describes the sequence of interactions from the user's voice command to the system's action and response.</p>
+
+    <div class="section">
+        <h3>Step-by-Step Sequence</h3>
+        <ol>
+            <li><strong>User Input (Voice):</strong> The farmer asks: <em>"Sania, lance l'irrigation sur la zone 2 car le sol est sec."</em></li>
+            <li><strong>Transcription (STT):</strong> The mobile app converts the audio into text.</li>
+            <li><strong>Reasoning (LangChain):</strong> The Agent receives the text and enters a Reasoning Loop:
+                <ul>
+                    <li><em>Is this a knowledge question?</em> No.</li>
+                    <li><em>Is this an action?</em> Yes.</li>
+                    <li><em>Do I need to check something first?</em> Yes, verify the humidity sensor.</li>
+                </ul>
+            </li>
+            <li><strong>Tool Execution (Action):</strong>
+                <ul>
+                    <li>Agent queries <strong>TimescaleDB</strong> -> Result: "Humidity 18% (Dry)".</li>
+                    <li>Agent calls API <strong>POST /irrigate/zone2</strong>.</li>
+                </ul>
+            </li>
+            <li><strong>Generation (LLM):</strong> The Agent generates a natural response: <em>"C'est fait. J'ai vérifié le capteur, il indique 18%. J'ai démarré l'arrosage pour 20 minutes."</em></li>
+            <li><strong>Avatar Animation (TTS + Unity/Flutter):</strong> The avatar animates and speaks the response.</li>
+        </ol>
+    </div>
+
+    <div class="section">
+        <h3>Visual Workflow Diagram</h3>
+        <div class="mermaid">
+sequenceDiagram
+    participant User as Farmer
+    participant App as Mobile/Unity (Avatar)
+    participant STT as STT Service
+    participant Agent as LangChain Agent
+    participant DB as TimescaleDB
+    participant IoT as MQTT API
+    participant LLM as LLM Engine
+    participant TTS as TTS Service
+
+    User->>App: Speaks: "Irrigate Zone 2"
+    App->>STT: Send Audio
+    STT-->>App: Return Text
+    App->>Agent: Send Text Input
+    
+    rect rgb(240, 248, 255)
+        note right of Agent: Reasoning Loop
+        Agent->>LLM: Analyze Intent
+        LLM-->>Agent: Action: Check Humidity
+    end
+
+    Agent->>DB: Query Humidity (Tool 1)
+    DB-->>Agent: Returns "18% (Dry)"
+    
+    rect rgb(240, 248, 255)
+        note right of Agent: Decision
+        Agent->>LLM: Decision: Start Irrigation
+    end
+
+    Agent->>IoT: POST /irrigate/zone2 (Tool 3)
+    IoT-->>Agent: Confirmation: "Started"
+
+    Agent->>LLM: Generate Natural Response
+    LLM-->>Agent: "Done. Humidity was 18%. Irrigation started."
+
+    Agent-->>App: Return Text Response
+    App->>TTS: Convert to Speech
+    TTS-->>App: Audio Output
+    App->>User: Avatar Speaks & Animates
+        </div>
+    </div>
+
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true });
+    </script>
+
+</body>
+</html>

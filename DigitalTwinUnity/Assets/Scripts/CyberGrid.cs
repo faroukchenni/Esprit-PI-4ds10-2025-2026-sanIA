@@ -70,6 +70,7 @@ public class CyberGrid : MonoBehaviour
     public Renderer[,]   soilRenderers;
 
     private TwinSimulationManager sim;
+    private WeatherSystem         _weather;
 
     // ── Disease colour constants (read by UpdateVisuals & DiseaseManager) ─────
     public static readonly Color DiseaseColorEarly   = new Color(0.784f, 0.706f, 0.000f); // #C8B400 yellow
@@ -84,6 +85,9 @@ public class CyberGrid : MonoBehaviour
 
     /// <summary>Called by DiseaseManager when a cell is newly infected.</summary>
     public void StartInfectionFlash(int x, int y) => _flashTimers[new Vector2Int(x, y)] = 0.5f;
+
+    /// <summary>Remove infection flash so treated cells do not keep pulsing tints.</summary>
+    public void ClearInfectionFlash(int x, int y) => _flashTimers.Remove(new Vector2Int(x, y));
 
     // Per-zone shared material instances — avoids checkerboard
     private readonly Dictionary<CropType, Material> _zoneSoilMats = new Dictionary<CropType, Material>();
@@ -102,7 +106,8 @@ public class CyberGrid : MonoBehaviour
 
     IEnumerator Start()
     {
-        sim = TwinSimulationManager.Instance;
+        sim      = TwinSimulationManager.Instance;
+        _weather = FindAnyObjectByType<WeatherSystem>();
         while (sim == null || sim.gridData == null)
         {
             yield return null;
@@ -128,14 +133,13 @@ public class CyberGrid : MonoBehaviour
 
         Material mat = new Material(sourceMat);
         Color c = ZoneSoilColor(zone);
-        if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", c);
-        else mat.color = c;
-        if (mat.HasProperty("_EmissionColor")) mat.SetColor("_EmissionColor", Color.black);
+        MaterialSafeUtil.ApplyBaseTint(mat, c);
+        MaterialSafeUtil.ApplyEmission(mat, Color.black);
         _zoneSoilMats[zone] = mat;
         return mat;
     }
 
-    static Color ZoneSoilColor(CropType zone)
+    public static Color ZoneSoilColor(CropType zone)
     {
         switch (zone)
         {
@@ -380,9 +384,31 @@ public class CyberGrid : MonoBehaviour
         if (!_zoneSoilMats.TryGetValue(crop, out Material mat)) return;
 
         // Try both URP (_BaseColor) and Standard (_Color) property names
-        if (mat.HasProperty("_BaseColor")) mat.SetColor("_BaseColor", color);
-        if (mat.HasProperty("_Color"))     mat.SetColor("_Color",     color);
-        mat.color = color;
+        MaterialSafeUtil.ApplyBaseTint(mat, color);
+    }
+
+    /// <summary>
+    /// Forces every soil tile in a crop zone back onto the shared zone material (no Renderer.material instancing).
+    /// Call after TreatZone so tints and batching match <see cref="SetZoneColor"/>.
+    /// </summary>
+    public void RebindZoneSoilRenderersToSharedMaterial(CropType crop)
+    {
+        if (sim == null || sim.gridData == null || soilRenderers == null) return;
+        if (!_zoneSoilMats.TryGetValue(crop, out Material shared) || shared == null)
+        {
+            Debug.LogWarning($"[CyberGrid] No shared soil material for zone {crop} — skip rebind.");
+            return;
+        }
+
+        for (int x = 0; x < sim.gridWidth; x++)
+        {
+            for (int y = 0; y < sim.gridHeight; y++)
+            {
+                if (sim.gridData[x, y].Crop != crop) continue;
+                Renderer sr = soilRenderers[x, y];
+                if (sr != null) sr.sharedMaterial = shared;
+            }
+        }
     }
 
     public void SetZoneCropColor(string zoneName, Color color)
@@ -394,8 +420,7 @@ public class CyberGrid : MonoBehaviour
             foreach (Renderer r in cell.cropObject.GetComponentsInChildren<Renderer>())
             {
                 if (r == null) continue;
-                r.material.SetColor("_BaseColor", color);
-                r.material.color = color;
+                MaterialSafeUtil.ApplyBaseTint(r.material, color);
             }
         }
     }
@@ -407,10 +432,7 @@ public class CyberGrid : MonoBehaviour
             if (cell.soilTile == null) continue;
             Renderer r = cell.soilTile.GetComponentInChildren<Renderer>();
             if (r != null)
-            {
-                r.material.SetColor("_BaseColor", color);
-                r.material.color = color;
-            }
+                MaterialSafeUtil.ApplyBaseTint(r.material, color);
         }
     }
 
@@ -423,8 +445,7 @@ public class CyberGrid : MonoBehaviour
             foreach (Renderer r in cell.cropObject.GetComponentsInChildren<Renderer>())
             {
                 if (r == null) continue;
-                r.material.SetColor("_BaseColor", color);
-                r.material.color = color;
+                MaterialSafeUtil.ApplyBaseTint(r.material, color);
             }
         }
     }
@@ -438,10 +459,7 @@ public class CyberGrid : MonoBehaviour
             {
                 Renderer r = cell.soilTile.GetComponentInChildren<Renderer>();
                 if (r != null)
-                {
-                    r.material.SetColor("_BaseColor", cell.originalColor);
-                    r.material.color = cell.originalColor;
-                }
+                    MaterialSafeUtil.ApplyBaseTint(r.material, cell.originalColor);
             }
             // crop scales are restored automatically by UpdateVisuals (scenarioActive = false)
         }
@@ -506,9 +524,16 @@ public class CyberGrid : MonoBehaviour
                         }
                         else
                         {
-                            int   daysInfected = curDay - cell.InfectionDay;
-                            Color target       = daysInfected < 3 ? DiseaseColorEarly : DiseaseColorLate;
-                            var   key          = new Vector2Int(x, y);
+                            // Continuous severity gradient: 0→0.3 = healthy→early yellow,
+                            // 0.3→1.0 = early yellow→late dark rot
+                            float lvl = Mathf.Clamp01(cell.DiseaseLevel);
+                            Color target;
+                            if (lvl < 0.3f)
+                                target = Color.Lerp(Color.white, DiseaseColorEarly, lvl / 0.3f);
+                            else
+                                target = Color.Lerp(DiseaseColorEarly, DiseaseColorLate, (lvl - 0.3f) / 0.7f);
+
+                            var key = new Vector2Int(x, y);
                             cropColor = _flashTimers.TryGetValue(key, out float t)
                                 ? Color.Lerp(target, Color.white, t / 0.5f)
                                 : target;
@@ -524,31 +549,43 @@ public class CyberGrid : MonoBehaviour
                     foreach (Renderer r in gridRenderers[x, y])
                     {
                         if (r == null) continue;
-                        if (r.material.HasProperty("_BaseColor")) r.material.SetColor("_BaseColor", cropColor);
-                        r.material.SetColor("_EmissionColor", cropColor != Color.white ? cropColor * 0.3f : Color.black);
+                        MaterialSafeUtil.ApplyBaseTint(r.material, cropColor);
+                        MaterialSafeUtil.ApplyEmission(r.material,
+                            cropColor != Color.white ? cropColor * 0.3f : Color.black);
                     }
 
                     float healthFactor = 0.3f + cell.VegetationHealth * 0.7f;
                     gridObjects[x, y].transform.localScale = Vector3.one * (baseScale * healthFactor);
                 }
 
-                // ── Soil — moisture gradient + late-stage infection darkening ──
+                // ── Soil — moisture gradient + disease severity + weather bias ──
                 if (soilRenderers != null && soilRenderers[x, y] != null)
                 {
-                    if (cell.IsInfected && !cell.IsTreated && (curDay - cell.InfectionDay) >= 3)
+                    Color soilCol;
+                    if (cell.IsInfected && !cell.IsTreated)
                     {
-                        soilRenderers[x, y].material.SetColor("_BaseColor", DiseaseColorSoil);
-                        soilRenderers[x, y].material.color = DiseaseColorSoil;
-                    }
-                    else if (!cell.IsInfected || cell.IsTreated)
-                    {
-                        // Lerp soil color: wet zone color → dry sandy yellow based on moisture
+                        // Lerp from zone base toward dark rot soil using DiseaseLevel
+                        float lvl     = Mathf.Clamp01(cell.DiseaseLevel);
                         Color zoneBase = ZoneSoilColor(cell.Crop);
-                        Color drySand  = new Color(0.78f, 0.64f, 0.32f); // sandy yellow
-                        Color soilCol  = Color.Lerp(drySand, zoneBase, Mathf.Clamp01(cell.MoistureLevel / 0.6f));
-                        soilRenderers[x, y].material.SetColor("_BaseColor", soilCol);
-                        soilRenderers[x, y].material.color = soilCol;
+                        soilCol = Color.Lerp(zoneBase, DiseaseColorSoil, lvl);
                     }
+                    else
+                    {
+                        Color zoneBase = ZoneSoilColor(cell.Crop);
+                        Color drySand  = new Color(0.78f, 0.64f, 0.32f);
+                        soilCol = Color.Lerp(drySand, zoneBase, Mathf.Clamp01(cell.MoistureLevel / 0.6f));
+
+                        // Weather bias: drought darkens toward cracked clay, heatwave scorches
+                        if (_weather != null)
+                        {
+                            if (_weather.isHeatwave)
+                                soilCol = Color.Lerp(soilCol, new Color(0.45f, 0.22f, 0.05f), 0.55f);
+                            else if (_weather.isDrought)
+                                soilCol = Color.Lerp(soilCol, drySand, 0.35f);
+                        }
+                    }
+
+                    MaterialSafeUtil.ApplyBaseTint(soilRenderers[x, y].material, soilCol);
                 }
             }
         }

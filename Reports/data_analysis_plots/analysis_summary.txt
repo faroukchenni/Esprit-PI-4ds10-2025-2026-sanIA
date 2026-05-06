@@ -1,0 +1,60 @@
+
+PLANT DISEASE DATASET - ANALYSIS SUMMARY
+================================================================================
+
+Dataset Path: C:\Users\21658\Desktop\ProjetPi\Data\Raw\Plant_leave_diseases_dataset_without_augmentation
+Analysis Date: 2026-02-08 21:22:33
+
+BASIC STATISTICS
+================================================================================
+Total Classes: 39
+Total Images: 55,448
+Average Images per Class: 1421.7
+Median Images per Class: 1109.0
+
+CLASS DISTRIBUTION
+================================================================================
+Most Images: Orange___Haunglongbing_(Citrus_greening) (5,507 images)
+Least Images: Potato___healthy (152 images)
+Imbalance Ratio: 36.23x
+
+PLANT SPECIES
+================================================================================
+Total Species: 15
+Species with Most Classes: Tomato (10 classes)
+
+HEALTHY VS DISEASED
+================================================================================
+Healthy Classes: 12 (30.8%)
+Diseased Classes: 26 (66.7%)
+Background Classes: 1 (2.6%)
+
+Healthy Images: 15,084 (27.2%)
+Diseased Images: 39,221 (70.7%)
+Background Images: 1,143 (2.1%)
+
+IMAGE PROPERTIES (sampled 500 images)
+================================================================================
+Width: 256-256px (mean: 256.0px)
+Height: 192-256px (mean: 254.1px)
+Aspect Ratio: 1.00-1.33 (mean: 1.01)
+File Size: 5.4-24.2 KB (mean: 15.2 KB)
+
+RECOMMENDATIONS
+================================================================================
+1. Use class weights to handle 36.23x imbalance
+2. Resize all images to 224×224 for model input
+3. Apply data augmentation to increase dataset diversity
+4. Consider stratified train/validation/test split
+5. Monitor per-class performance during training (especially rare classes)
+
+GENERATED VISUALIZATIONS
+================================================================================
+1. Class Distribution Bar Chart
+2. Top 10 vs Bottom 10 Classes
+3. Plant Species Distribution
+4. Healthy vs Diseased Pie Charts
+5. Image Size Distribution Histograms
+6. Sample Images Grid
+
+All visualizations saved to: C:\Users\21658\Desktop\ProjetPi\Reports\data_analysis_plots

@@ -929,20 +929,7 @@ public static class SelectionHelper
         EditorUtility.SetDirty(simCore);
         Debug.Log("SetupSimulationTests: ScenarioManager attached to SimulationCore.");
 
-        // ── 2. Wire ScenarioManager into FuturisticUI ─────────────────────────
         FuturisticUI fui = Object.FindFirstObjectByType<FuturisticUI>();
-        if (fui != null)
-        {
-            Undo.RecordObject(fui, "Wire ScenarioManager");
-            fui.scenarioManager = sm;
-            EditorUtility.SetDirty(fui);
-            Debug.Log("SetupSimulationTests: ScenarioManager wired into FuturisticUI.");
-        }
-        else
-        {
-            Debug.LogWarning("SetupSimulationTests: FuturisticUI not found in scene — " +
-                             "assign ScenarioManager manually.");
-        }
 
         // ── 3. Find Canvas ────────────────────────────────────────────────────
         Canvas canvas = Object.FindFirstObjectByType<Canvas>();
@@ -1362,16 +1349,6 @@ public static class SelectionHelper
             Debug.Log("FullSceneFix: ScenarioOverlay created.");
         }
 
-        // 3. Wire FuturisticUI scenario manager reference
-        FuturisticUI fui = Object.FindFirstObjectByType<FuturisticUI>();
-        ScenarioManager sm = Object.FindFirstObjectByType<ScenarioManager>();
-        if (fui != null && sm != null)
-        {
-            Undo.RecordObject(fui, "Wire ScenarioManager");
-            fui.scenarioManager = sm;
-            EditorUtility.SetDirty(fui);
-        }
-
         UnityEditor.SceneManagement.EditorSceneManager.MarkAllScenesDirty();
 
         Debug.Log("FullSceneFix: COMPLETE.\n" +
@@ -1694,20 +1671,6 @@ public static class SelectionHelper
             Undo.RegisterCreatedObjectUndo(ovGO, "Create ScenarioOverlay");
             ovGO.AddComponent<ScenarioOverlay>();
             Debug.Log("FixScenariosOnly: ScenarioOverlay created.");
-        }
-
-        // ── Wire ScenarioManager into FuturisticUI ────────────────────────────
-        FuturisticUI fui = Object.FindFirstObjectByType<FuturisticUI>();
-        if (fui != null)
-        {
-            Undo.RecordObject(fui, "Wire ScenarioManager");
-            fui.scenarioManager = sm;
-            EditorUtility.SetDirty(fui);
-            Debug.Log("FixScenariosOnly: ScenarioManager wired into FuturisticUI.");
-        }
-        else
-        {
-            Debug.LogWarning("FixScenariosOnly: FuturisticUI not found — add it to the scene to enable HUD updates.");
         }
 
         UnityEditor.SceneManagement.EditorSceneManager.MarkAllScenesDirty();
@@ -2542,19 +2505,7 @@ public static class SelectionHelper
             Debug.Log("QuickScenarioFix: ScenarioOverlay found.");
 
         FuturisticUI fui = Object.FindFirstObjectByType<FuturisticUI>();
-        if (fui != null)
-        {
-            if (fui.scenarioManager == null && sm != null)
-            {
-                Undo.RecordObject(fui, "Wire ScenarioManager");
-                fui.scenarioManager = sm;
-                EditorUtility.SetDirty(fui);
-                Debug.Log("QuickScenarioFix: FuturisticUI.scenarioManager was null — auto-wired.");
-            }
-            else
-                Debug.Log($"QuickScenarioFix: FuturisticUI wired = {(fui.scenarioManager != null ? "YES" : "NO")}.");
-        }
-        else
+        if (fui == null)
             Debug.LogWarning("QuickScenarioFix: FuturisticUI NOT found — add it to the scene to enable HUD buttons.");
 
         if (ok)

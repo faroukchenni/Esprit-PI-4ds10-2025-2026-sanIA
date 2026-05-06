@@ -46,7 +46,7 @@ public class WeatherSystem : MonoBehaviour
     public float droughtProbability = 0.05f;
 
     [Header("Backend URL (proxies Open-Meteo — no direct external calls from Unity)")]
-    public string backendUrl = "http://localhost:8001/api/v1";
+    public string backendUrl = "http://localhost:8000/api/v1";
     [Tooltip("Real-world fetch interval in seconds (600 = 10 min)")]
     public float refreshInterval = 600f;
 
@@ -55,6 +55,9 @@ public class WeatherSystem : MonoBehaviour
     private float[] _fcstRain     = new float[0];
     private float[] _fcstHumidity = new float[0];
     private int     _fcstDayCount = 0;
+
+    /// <summary>Random simulated rain depth (mm) when RollSimWeather picks a wet day without forecast mm.</summary>
+    private float _rolledSimRainMmToday;
 
     // ── Private refs ───────────────────────────────────────────────────────────
     private TwinSimulationManager _sim;
@@ -85,6 +88,21 @@ public class WeatherSystem : MonoBehaviour
 
         StartCoroutine(RealWeatherLoop());
         StartCoroutine(ForecastLoop());
+    }
+
+    /// <summary>
+    /// Rain mm to send to the irrigation agent so <c>rain_mm</c> / rain guard match the twin
+    /// (forecast, live Tunis precip, or simulated shower), not only Open-Meteo on the server.
+    /// </summary>
+    public float GetReportedRainMmForIrrigationAgent(int currentSimDay)
+    {
+        float mm = Mathf.Max(0f, currentPrecipitation);
+        if (_fcstDayCount > 0 && currentSimDay >= 0 && currentSimDay < _fcstDayCount)
+            mm = Mathf.Max(mm, _fcstRain[currentSimDay]);
+        mm = Mathf.Max(mm, _rolledSimRainMmToday);
+        if (isRaining && mm < 1f)
+            mm = Mathf.Max(mm, 3f);
+        return mm;
     }
 
     // ── 16-day forecast loop (refresh every 6 real hours) ────────────────────
@@ -251,6 +269,8 @@ public class WeatherSystem : MonoBehaviour
 
     private void RollSimWeather(int day)
     {
+        _rolledSimRainMmToday = 0f;
+
         // ── Apply forecast data for this simulated day (if loaded) ────────────
         // Days 0-15: use Open-Meteo 16-day forecast (real future temps/rain/RH).
         // Days 16+: fall back to last known live weather.
@@ -287,7 +307,9 @@ public class WeatherSystem : MonoBehaviour
         }
 
         // ── Hargreaves ET0 estimate (uses currentTemperature — now forecast-driven)
-        currentET0_mm = Mathf.Max(1f, 0.18f * currentTemperature - 0.5f);
+        // Hargreaves ET0 with a 1.5× boost for the digital twin —
+        // makes soil deplete fast enough to trigger irrigation within a few sim days.
+        currentET0_mm = Mathf.Max(2f, (0.18f * currentTemperature - 0.5f) * 1.5f);
 
         // Daily ETc depletion per crop zone (core simulation physics)
         ApplyDailyETDepletion();
@@ -306,6 +328,8 @@ public class WeatherSystem : MonoBehaviour
         else if (roll < droughtProbability + rainProbability)
         {
             isRaining = true;
+            _rolledSimRainMmToday = Random.Range(2.5f, 8f);
+            currentPrecipitation  = Mathf.Max(currentPrecipitation, _rolledSimRainMmToday);
             _rain?.StartRain();
             TwinEventLogger.Log("WEATHER", "Simulated rain event started.", "info");
         }
@@ -328,7 +352,10 @@ public class WeatherSystem : MonoBehaviour
     {
         if (_sim?.gridData == null) return;
 
-        float rainRecharge = isRaining ? currentET0_mm * 0.8f : 0f; // rough: rain replaces 80% of ET0
+        // Rain recharge capped at 25% of ET0 — keeps soil trending toward deficit
+        // even during wet periods so the irrigation agent eventually fires.
+        // (0.8 was offsetting almost all depletion, preventing IRRIGATE decisions.)
+        float rainRecharge = isRaining ? currentET0_mm * 0.25f : 0f;
 
         for (int x = 0; x < _sim.gridWidth; x++)
         for (int y = 0; y < _sim.gridHeight; y++)

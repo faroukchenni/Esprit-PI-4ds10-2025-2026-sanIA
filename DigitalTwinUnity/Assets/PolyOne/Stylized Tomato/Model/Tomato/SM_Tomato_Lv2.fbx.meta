@@ -1,14 +1,26 @@
 fileFormatVersion: 2
 guid: f3949d79bfc9066458c28b5af210cdd7
+AssetOrigin:
+  serializedVersion: 1
+  productId: 323039
+  packageName: Free Pack - Stylized Tomato
+  packageVersion: 0.0.1
+  assetPath: Assets/PolyOne/Stylized Tomato/Model/Tomato/SM_Tomato_Lv2.fbx
+  uploadId: 763278
 ModelImporter:
-  serializedVersion: 22200
+  serializedVersion: 24200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Tomato_M
+    second: {fileID: 2100000, guid: 646b8a0cd404d8541a84040d94079a73, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
     materialSearch: 1
-    materialLocation: 1
+    materialLocation: 0
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
@@ -16,8 +28,6 @@ ModelImporter:
     optimizeGameObjects: 0
     removeConstantScaleCurves: 0
     motionNodeName: 
-    rigImportErrors: 
-    rigImportWarnings: 
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
@@ -58,6 +68,9 @@ ModelImporter:
     maxBonesPerVertex: 4
     minBoneWeight: 0.001
     optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
     meshOptimizationFlags: -1
     indexFormat: 0
     secondaryUVAngleDistortion: 8
@@ -107,10 +120,3 @@ ModelImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 323039
-  packageName: Free Pack - Stylized Tomato
-  packageVersion: 0.0.1
-  assetPath: Assets/PolyOne/Stylized Tomato/Model/Tomato/SM_Tomato_Lv2.fbx
-  uploadId: 763278

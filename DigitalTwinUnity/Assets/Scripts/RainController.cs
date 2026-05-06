@@ -23,13 +23,24 @@ public class RainController : MonoBehaviour
 
     public bool isRaining = false;
 
+    /// <summary>
+    /// True if rain is actually active — checks both the flag AND the visual systems
+    /// so rain started externally via the prefab or particle system is always detected.
+    /// </summary>
+    public bool IsRainingNow =>
+        isRaining
+        || (rainScript   != null && rainScript.RainIntensity > 0.01f)
+        || (rainParticles != null && rainParticles.isPlaying);
+
     // ── Lifecycle ──────────────────────────────────────────────────────────────
 
     void Start()
     {
-        // Auto-discover RainMaker
-        if (rainScript == null)
-            rainScript = FindAnyObjectByType<DigitalRuby.RainMaker.BaseRainScript>();
+        // RainMaker follows the camera and spawns rain above it — in a top-down farm view
+        // the camera is ~40m up, so rain appears at ~65m, never reaching the fields.
+        // We disable RainMaker and use our own fixed-position particle system instead.
+        DisableRainMakerInScene();
+        rainScript = null;
 
         // Auto-discover fallback PS if not assigned
         if (rainParticles == null)
@@ -111,5 +122,17 @@ public class RainController : MonoBehaviour
     {
         if (rainScript  != null) rainScript.RainIntensity = 0f;
         if (rainParticles != null && rainParticles.isPlaying) rainParticles.Stop();
+    }
+
+    private static void DisableRainMakerInScene()
+    {
+        // Find and disable the RainMaker root GameObject so it doesn't render
+        // camera-relative rain way above the farm.
+        var rmScript = FindAnyObjectByType<DigitalRuby.RainMaker.BaseRainScript>();
+        if (rmScript != null)
+        {
+            rmScript.gameObject.SetActive(false);
+            Debug.Log("[RainController] Disabled RainMaker GO — using fixed-position particle rain instead.");
+        }
     }
 }

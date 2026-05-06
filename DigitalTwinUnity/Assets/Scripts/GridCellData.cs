@@ -16,7 +16,7 @@ public class GridCellData
     public GridCellData(float baseTemp, CropType type = CropType.Tomato)
     {
         Crop = type;
-        MoistureLevel = 0.5f; // Start with 50% moisture
+        MoistureLevel = 0.5f;
         VegetationHealth = 1.0f; // Start 100% healthy
         DiseaseLevel = 0.0f; // No disease
         SoilQuality = 0.8f; // Good soil

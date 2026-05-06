@@ -1,0 +1,413 @@
+{
+  "common": {
+    "unknown": "Inconnu",
+    "na": "N/A"
+  },
+  "loading": {
+    "title": "SANIA AgriSmart",
+    "subtitle": "Agriculture intelligente · détection des maladies par IA"
+  },
+  "tabs": {
+    "home": "Accueil",
+    "detect": "Détecter",
+    "history": "Historique",
+    "profile": "Profil"
+  },
+  "auth": {
+    "taglineLogin": "La santé des cultures par IA, dans votre poche",
+    "welcomeBack": "Bon retour",
+    "signInSubtitle": "Connectez-vous pour continuer",
+    "emailPlaceholder": "Adresse e-mail",
+    "passwordPlaceholder": "Mot de passe",
+    "signIn": "Se connecter",
+    "newHere": "Nouveau ?",
+    "createAccountLink": "Créer un compte",
+    "missingFields": "Champs manquants",
+    "missingFieldsMsg": "Veuillez saisir votre e-mail et votre mot de passe.",
+    "loginFailed": "Échec de la connexion",
+    "loginFailedDefault": "Connexion impossible. Vérifiez vos identifiants.",
+    "networkHint": "Téléphone réel : mettez l’IP Wi‑Fi du PC dans src/config/backendUrl.js ; lancez l’API avec --host 0.0.0.0 ; même Wi‑Fi.",
+    "joinSania": "Rejoindre SANIA",
+    "createFarmerAccount": "Créez votre compte agriculteur",
+    "fullName": "Nom complet",
+    "passwordMin": "Mot de passe (min. 6 car.)",
+    "confirmPassword": "Confirmer le mot de passe",
+    "createAccount": "Créer le compte",
+    "accountCreated": "Compte créé",
+    "accountCreatedMsg": "Votre compte a été créé. Veuillez vous connecter.",
+    "ok": "OK",
+    "alreadyHaveAccount": "Déjà un compte ?",
+    "signInLink": "Se connecter",
+    "missingAllFields": "Veuillez remplir tous les champs.",
+    "passwordMismatch": "Mots de passe différents",
+    "passwordMismatchMsg": "Les mots de passe ne correspondent pas.",
+    "weakPassword": "Mot de passe trop faible",
+    "weakPasswordMsg": "Le mot de passe doit contenir au moins 6 caractères.",
+    "registerError": "Inscription impossible. Réessayez.",
+    "error": "Erreur"
+  },
+  "home": {
+    "eyebrow": "Tableau de bord",
+    "greeting": "Bonjour, {{name}}",
+    "headerSub": "Intelligence de précision — classifier les maladies, cartographier la sévérité",
+    "ctaBadge": "Vision IA",
+    "ctaTitle": "Analyser une feuille",
+    "ctaSub": "Double modèle · classe de maladie + carte de sévérité",
+    "statScans": "Analyses",
+    "statAlerts": "Alertes",
+    "statHealthy": "Saines",
+    "sectionTimeline": "Chronologie",
+    "recentScans": "Analyses récentes",
+    "viewAll": "Tout voir →",
+    "emptyTitle": "Votre carnet de terrain est vide",
+    "emptySub": "Une photo nette de feuille débloque une analyse IA instantanée",
+    "tipTitle": "Photo réussie",
+    "tip1": "Lumière naturelle, pas de flash direct sur la feuille",
+    "tip2": "Une feuille dominante dans le cadre",
+    "tip3": "Montrer tissu sain et symptômes",
+    "tip4": "Tenir l’appareil stable — le flou nuit aux deux modèles",
+    "farmerDefault": "Agriculteur",
+    "confidenceLine": "{{crop}} · {{pct}} % de confiance",
+    "statusHealthy": "Saine",
+    "statusDiseased": "Malade",
+    "featuresKicker": "Fonctionnalités",
+    "featuresTitle": "Ce que SANIA peut faire",
+    "featDiagTitle": "Diagnostic instantané",
+    "featDiagSub": "Scannez les feuilles en quelques secondes",
+    "featReminderTitle": "Rappels intelligents",
+    "featReminderSub": "Arrosage et fertilisation",
+    "featPlanTitle": "Plans d’action",
+    "featPlanSub": "Des étapes claires pour protéger votre culture",
+    "featSolutionsTitle": "Solutions immédiates",
+    "featSolutionsSub": "Conseils pratiques et remèdes pour aider vos plantes à se rétablir.",
+    "featProgressTitle": "Suivi dans le temps",
+    "featProgressSub": "Suivez l’évolution de vos plantes et voyez les progrès."
+  },
+  "scan": {
+    "kicker": "Labo IA",
+    "title": "Diagnostic foliaire",
+    "sub": "Appareil photo ou galerie — même pipeline à deux modèles",
+    "offlineIntelTitle": "Intelligence embarquée",
+    "offlineIntelSub": "Aucune connexion requise — modèles locaux",
+    "takePhoto": "Prendre une photo",
+    "takePhotoSub": "Capturer la feuille avec l’appareil photo",
+    "gallery": "Choisir dans la galerie",
+    "gallerySub": "Sélectionner une image existante",
+    "tipsTitle": "Conseils photo",
+    "tip1": "Lumière du jour — éviter le flash",
+    "tip2": "Centrer la feuille et remplir le cadre",
+    "tip3": "Une seule feuille avec symptômes visibles",
+    "tip4": "Éviter ombres floues et images bougées",
+    "cropsTitle": "Cultures prises en charge",
+    "cropApple": "🍎 Pomme",
+    "cropGrape": "🍇 Raisin",
+    "cropPotato": "🥔 Pomme de terre",
+    "cropTomato": "🍅 Tomate",
+    "permTitle": "Autorisation requise",
+    "permMsg": "L’accès à la caméra est nécessaire pour prendre des photos.",
+    "captureError": "Erreur",
+    "captureErrorMsg": "Échec de la capture photo.",
+    "detectionError": "Erreur de détection",
+    "analysisFailed": "Analyse impossible.",
+    "cameraHint": "Alignez la feuille dans le cadre",
+    "confirmPhoto": "Confirmer la photo",
+    "offlinePill": "🔴 Hors ligne",
+    "previewHintOnline": "Cette photo montre-t-elle clairement la feuille ?",
+    "previewHintOffline": "Mode hors ligne : analyse sur l’appareil",
+    "analyzingOnline": "Analyse…",
+    "analyzingOffline": "IA locale en cours…",
+    "analyzeDisease": "Analyser la maladie",
+    "retake": "Reprendre la photo"
+  },
+  "result": {
+    "title": "Résultat",
+    "offlinePill": "🔴 Hors ligne",
+    "statusHealthy": "Saine",
+    "statusDiseased": "Malade",
+    "confidence": "Confiance",
+    "coverageTitle": "Couverture de la maladie (segmentation IA)",
+    "affected": "{{pct}} % touché",
+    "coverageHint": "Pourcentage de surface foliaire présentant des symptômes",
+    "computingSeverity": "Calcul de la carte de sévérité…",
+    "aboutTitle": "À propos de cette maladie",
+    "maintenanceTips": "✅ Conseils d’entretien",
+    "treatmentTips": "💊 Traitements recommandés",
+    "topPredictions": "Meilleures prédictions",
+    "scanAnother": "Analyser une autre plante",
+    "warningCritical": "Cette maladie se propage rapidement. Agissez sans délai et consultez un agronome.",
+    "severityLabels": {
+      "Critical": "Critique",
+      "Low": "Faible",
+      "Moderate": "Modérée",
+      "High": "Élevée",
+      "Healthy": "Saine"
+    }
+  },
+  "history": {
+    "title": "Historique des analyses",
+    "scansCount": "{{count}} analyses",
+    "cacheBanner": "Résultats en cache — connectez-vous pour synchroniser",
+    "filterAll": "Toutes",
+    "filterDiseased": "Malades",
+    "filterHealthy": "Saines",
+    "empty": "Aucune analyse",
+    "emptySub": "Analysez une plante pour voir l’historique ici",
+    "statusHealthy": "Saine",
+    "statusDiseased": "Malade"
+  },
+  "profile": {
+    "account": "Compte",
+    "about": "À propos",
+    "aboutUsTitle": "À propos de nous",
+    "aboutUsBody": "SANIA AgriSmart aide les agriculteurs et les coopératives à repérer les maladies des plantes à partir de photos de feuilles grâce à une IA embarquée. Nous combinons la classification des maladies avec une carte de sévérité pour montrer à la fois le problème et la part de feuille touchée — même sans connexion internet. Notre mission : une agriculture pratique et durable en Tunisie et au-delà.",
+    "supportedCrops": "Cultures prises en charge",
+    "fullName": "Nom complet",
+    "email": "E-mail",
+    "role": "Rôle",
+    "roleFarmer": "Agriculteur",
+    "roleAdmin": "Admin coopérative",
+    "app": "Application",
+    "appValue": "SANIA AgriSmart v1.0",
+    "ai": "IA",
+    "aiValue": "MobileNetV3 · 16 classes · TFLite",
+    "backend": "Serveur",
+    "backendValue": "FastAPI + PostgreSQL",
+    "cropApple": "Pomme",
+    "cropGrape": "Raisin",
+    "cropPotato": "Pomme de terre",
+    "cropTomato": "Tomate",
+    "signOut": "Déconnexion",
+    "signOutTitle": "Déconnexion",
+    "signOutMsg": "Voulez-vous vraiment vous déconnecter ?",
+    "cancel": "Annuler",
+    "language": "Langue",
+    "languageHint": "Langue de l’application",
+    "languageEn": "English",
+    "languageFr": "Français",
+    "languageTn": "Tunisien (arabe)"
+  },
+  "satellite": {
+    "headerTitle": "Analyse satellite",
+    "headerSubtitle": "Pilier 2 — intelligence terrain",
+    "loadingFields": "Chargement des parcelles…",
+    "noFields": "Aucune parcelle",
+    "noFieldsSub": "Créez une parcelle sur le tableau de bord web pour l’analyse satellite.",
+    "fetching": "Récupération des données satellite…",
+    "loadError": "Impossible de charger les parcelles.",
+    "loadErrorAnalysis": "Impossible de charger l’analyse satellite. Vérifiez la connexion.",
+    "ndviTitle": "NDVI satellite",
+    "ndviSub": "Sentinel-2 L2A",
+    "noPolygon": "Aucun polygone défini pour cette parcelle. Tracez d’abord le contour.",
+    "avgNdvi": "NDVI moy.",
+    "minNdvi": "NDVI min",
+    "maxNdvi": "NDVI max",
+    "clouds": "Nuages",
+    "vraTitle": "Carte de prescription VRA",
+    "soilTitle": "Indicateurs de santé des sols",
+    "soilSub": "NDVI · SAVI · MSAVI · Humidité",
+    "ndvi": "NDVI",
+    "savi": "SAVI",
+    "msavi": "MSAVI",
+    "moisture": "Humidité",
+    "fertilitySuffix": " fertilité",
+    "stressLevels": {
+      "Low": "Faible",
+      "Moderate": "Modéré",
+      "High": "Élevé"
+    },
+    "moistureStressFmt": "Stress hydrique : {{level}}",
+    "totalPrescription": "Prescription totale :",
+    "calendarTitle": "Calendrier cultural",
+    "seasonProgress": "{{pct}} % de la saison écoulée",
+    "timelineTitle": "Chronologie de saison",
+    "nextStage": "Suivant : {{name}}",
+    "footer": "Données Sentinel-2 L2A via AgroMonitoring · {{date}}"
+  },
+  "diseases": {
+    "Apple___Apple_scab": {
+      "displayName": "Tavelure du pommier",
+      "crop": "Pomme",
+      "description": "Maladie fongique (Venturia inaequalis) provoquant des taches sombres, veloutées ou croûteuses sur feuilles, fruits et rameaux.",
+      "recommendations": [
+        "Appliquer un fongicide (captane ou myclobutanil) au débourrement et début de feuillaison",
+        "Ramasser et détruire les feuilles infectées au sol",
+        "Tailler pour aérer le houppier",
+        "Éviter l’arrosage par-dessus — arroser au pied",
+        "Privilégier des variétés résistantes pour les nouveaux plants"
+      ]
+    },
+    "Apple___Black_rot": {
+      "displayName": "Pourriture noire du pommier",
+      "crop": "Pomme",
+      "description": "Champignon (Botryosphaeria obtusa) : lésions circulaires sur feuilles, fruits momifiés, chancres sur branches.",
+      "recommendations": [
+        "Éliminer le bois mort et les chancres (brûler ou enfouir)",
+        "Pulvériser captane ou thiophanate-méthyl du stade rose à récolte",
+        "Retirer les fruits momifiés sur l’arbre et au sol",
+        "Maintenir la vigueur avec une fertilisation équilibrée",
+        "Assurer un bon drainage au pied de l’arbre"
+      ]
+    },
+    "Apple___Cedar_apple_rust": {
+      "displayName": "Rouille vésiculeuse du pommier",
+      "crop": "Pomme",
+      "description": "Champignon (Gymnosporangium) : taches orange-jaune vives sur la face supérieure des feuilles.",
+      "recommendations": [
+        "Traiter au myclobutanil ou soufre du stade bouton rose à première couverture",
+        "Éloigner ou retirer les genévriers hôtes alternants si possible",
+        "Planter des variétés résistantes à la rouille",
+        "Surveiller au printemps par temps humide"
+      ]
+    },
+    "Apple___healthy": {
+      "displayName": "Pommier sain",
+      "crop": "Pomme",
+      "description": "Le pommier semble sain, sans symptômes visibles de maladie.",
+      "recommendations": [
+        "Poursuivre les pratiques actuelles",
+        "Pulvériser préventivement par périodes humides à risque",
+        "Surveiller chaque semaine tavelure et rouille",
+        "Maintenir taille et nutrition"
+      ]
+    },
+    "Background_without_leaves": {
+      "displayName": "Aucune plante détectée",
+      "crop": "Inconnu",
+      "description": "L’image ne montre pas clairement une feuille. Reprenez la photo.",
+      "recommendations": [
+        "Gros plan sur une seule feuille",
+        "Bon éclairage — éviter ombres et reflets",
+        "La feuille doit occuper la majeure partie du cadre",
+        "Tenir l’appareil stable"
+      ]
+    },
+    "Grape___Black_rot": {
+      "displayName": "Pourriture noire de la vigne",
+      "crop": "Raisin",
+      "description": "Champignon (Guignardia bidwellii) : taches brunes sur feuilles avec pycnides noires, baies momifiées.",
+      "recommendations": [
+        "Mancozeb ou myclobutanil de la floraison à 4–6 semaines après",
+        "Supprimer baies momifiées et bois infecté à la taille d’hiver",
+        "Détruire les débris — ne pas composter",
+        "Aérer le feuillage (palissage, effeuillage)",
+        "Traiter avant pluies annoncées"
+      ]
+    },
+    "Grape___Esca_(Black_Measles)": {
+      "displayName": "Esca de la vigne (rougeot noir)",
+      "crop": "Raisin",
+      "description": "Maladies complexes du bois : décoloration « zébrée » des feuilles, taches sur baies, pourriture du bois.",
+      "recommendations": [
+        "Aucun traitement curatif — privilégier la prévention",
+        "Tailler par temps sec pour limiter l’infection",
+        "Appliquer une pâte bordelaise sur les plaies de taille",
+        "Arracher les ceps très atteints",
+        "Éviter le stress hydrique"
+      ]
+    },
+    "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": {
+      "displayName": "Brûlure foliaire de la vigne",
+      "crop": "Raisin",
+      "description": "Champignon (Isariopsis clavispora) : taches brunes angulaires, défoliation précoce.",
+      "recommendations": [
+        "Cuivre ou mancozeb dès les premiers signes",
+        "Retirer les feuilles très infectées",
+        "Éclaircir le feuillage pour l’air",
+        "Arroser au pied, pas au-dessus"
+      ]
+    },
+    "Grape___healthy": {
+      "displayName": "Vigne saine",
+      "crop": "Raisin",
+      "description": "La vigne semble saine, sans symptômes visibles.",
+      "recommendations": [
+        "Poursuivre le programme cuivre/mancozeb préventif",
+        "Surveiller la pourriture noire après pluie",
+        "Maintenir une canopée aérée",
+        "Tenir un journal des traitements"
+      ]
+    },
+    "Potato___Early_blight": {
+      "displayName": "Alternariose (mildiou sec) de la pomme de terre",
+      "crop": "Pomme de terre",
+      "description": "Champignon (Alternaria solani) : lésions en cible sur feuilles âgées.",
+      "recommendations": [
+        "Chlorothalonil, mancozeb ou azoxystrobine au premier symptôme",
+        "Prospection régulière dès fermeture du rang",
+        "Détruire le feuillage très infecté",
+        "Éviter l’excès d’azote",
+        "Utiliser plants certifiés sains"
+      ]
+    },
+    "Potato___Late_blight": {
+      "displayName": "Mildiou de la pomme de terre",
+      "crop": "Pomme de terre",
+      "description": "Oomycète (Phytophthora infestans) — lésions humides qui noircissent vite ; très destructeur.",
+      "recommendations": [
+        "Appliquer immédiatement métalaxyl + mancozeb ou cymoxanil",
+        "Détruire les plants infectés (sac, enfouissement, brûlage)",
+        "Récolter les tubercules sains si situation critique",
+        "Pas d’arrosage par-dessus ni travail au champ mouillé",
+        "Prévenir les parcelles voisines — propagation rapide"
+      ]
+    },
+    "Potato___healthy": {
+      "displayName": "Pomme de terre saine",
+      "crop": "Pomme de terre",
+      "description": "Le plant semble sain, sans symptômes visibles.",
+      "recommendations": [
+        "Poursuivre fongicides préventifs par temps humide",
+        "Prospecter alternariose et mildiou chaque semaine",
+        "Buttage correct pour protéger les tubercules",
+        "Fertilisation équilibrée"
+      ]
+    },
+    "Tomato___Bacterial_spot": {
+      "displayName": "Taches bactériennes de la tomate",
+      "crop": "Tomate",
+      "description": "Bactéries (Xanthomonas) : petites taches décolorées avec halos jaunes sur feuilles et fruits.",
+      "recommendations": [
+        "Cuivre préventif (hydroxyde de cuivre)",
+        "Éviter l’arrosage par-dessus — privilégier le goutte-à-goutte",
+        "Retirer le matériel infecté",
+        "Rotation : pas de tomates au même emplacement 2 ans",
+        "Semences ou plants certifiés sains"
+      ]
+    },
+    "Tomato___Early_blight": {
+      "displayName": "Alternariose de la tomate",
+      "crop": "Tomate",
+      "description": "Champignon (Alternaria solani) : lésions en cible sur feuilles inférieures.",
+      "recommendations": [
+        "Chlorothalonil ou mancozeb au premier signe",
+        "Retirer les feuilles basses infectées",
+        "Paillage pour limiter les éclaboussures de sol",
+        "Tuteurer pour tenir le feuillage hors du sol",
+        "Rotation avec cultures non solanacées"
+      ]
+    },
+    "Tomato___Late_blight": {
+      "displayName": "Mildiou de la tomate",
+      "crop": "Tomate",
+      "description": "Oomycète (Phytophthora infestans) : grandes lésions gras-vert à brunes, défoliation rapide.",
+      "recommendations": [
+        "Métalaxyl-M ou cymoxanil + mancozeb immédiatement",
+        "Arracher et détruire les plants infectés",
+        "Ne pas travailler le feuillage mouillé",
+        "Éliminer les plants volontaires autour",
+        "Informer les voisins — dispersion aérienne rapide"
+      ]
+    },
+    "Tomato___healthy": {
+      "displayName": "Tomate saine",
+      "crop": "Tomate",
+      "description": "Le plant de tomate semble sain, sans symptômes visibles.",
+      "recommendations": [
+        "Maintenir programme fongicide/bactéricide préventif",
+        "Prospecter chaque semaine après temps humide",
+        "Goutte-à-goutte ou arrosage le matin",
+        "Émonder et tuteurer pour l’aération"
+      ]
+    }
+  }
+}
