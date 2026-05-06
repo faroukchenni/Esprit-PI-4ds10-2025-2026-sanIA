@@ -11,10 +11,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       libpq-dev \
  && rm -rf /var/lib/apt/lists/*
 
-COPY requirements-web.txt ./requirements-web.txt
+# Build context is repo root; paths must be relative to that.
+COPY backend/requirements-web.txt ./requirements-web.txt
 RUN pip install --no-cache-dir --upgrade pip \
  && pip install --no-cache-dir -r ./requirements-web.txt
 
-COPY ./ ./
+COPY backend/ ./
 
 CMD ["bash", "-lc", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
