@@ -6,6 +6,7 @@ nixPkgs = ["...", "python3", "python3Packages.pip"]
 [phases.install]
 cmds = [
   "pip3 --version",
+  "pip3 install --break-system-packages --index-url https://download.pytorch.org/whl/cpu torch torchvision torchaudio",
   "pip3 install --break-system-packages -r backend/requirements.txt"
 ]
 
