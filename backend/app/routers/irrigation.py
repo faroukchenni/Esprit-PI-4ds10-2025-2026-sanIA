@@ -24,14 +24,21 @@ router = APIRouter(prefix="/irrigation", tags=["Irrigation"])
 
 
 def _get_agent(request: Request):
-    """Retrieve the IrrigationAgentService singleton from app state."""
-    agent = getattr(request.app.state, "irrigation_agent", None)
-    if agent is None:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Irrigation agent not initialised. Check server startup logs."
-        )
-    return agent
+ """Retrieve (or lazily initialize) the IrrigationAgentService singleton."""
+ agent = getattr(request.app.state, "irrigation_agent", None)
+ if agent is None:
+  try:
+   # Lazy init keeps service startup fast for PaaS healthchecks while
+   # still enabling irrigation features when first requested.
+   from app.services.irrigation_agent import IrrigationAgentService
+   agent = IrrigationAgentService()
+   request.app.state.irrigation_agent = agent
+  except Exception as exc:
+   raise HTTPException(
+    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+    detail=f"Irrigation agent failed to initialize: {exc}"
+   )
+ return agent
 
 
 # ── Health ────────────────────────────────────────────────────────────────────
