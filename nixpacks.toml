@@ -1,6 +1,7 @@
 [phases.setup]
-# "..." keeps any Nixpacks-detected packages; python3 ensures pip exists.
-nixPkgs = ["...", "python3"]
+# "..." keeps any Nixpacks-detected packages.
+# Nix's python3 may not include pip, so install it explicitly.
+nixPkgs = ["...", "python3", "python3Packages.pip"]
 
 [phases.install]
 cmds = ["python -m pip install -r backend/requirements.txt"]
