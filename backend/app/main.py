@@ -74,6 +74,11 @@ if os.getenv("ENABLE_IRRIGATION", "0") == "1":
     app.include_router(irrigation.router, prefix=settings.API_V1_STR, tags=["Irrigation"])
 
 
+@app.get("/healthz")
+def healthz():
+    return {"status": "ok"}
+
+
 @app.get("/")
 def root():
     return {"message": f"Welcome to {settings.PROJECT_NAME}"}
